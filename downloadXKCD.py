@@ -79,15 +79,15 @@ os.makedirs('xkcd', exist_ok=True)   # store comics in ./xkcd
 
 def download_image(session, comic_url, filename):
     """
-    
+    Download the image file.
 
     Args:
         session (class 'requests.sessions.Session'): the Session object.
         comic_url (str): String containing the image url.
         filename (str): String of the filename to save the image to.
-
     """
     # print(f'Downloading page http://xkcd.com/{url_number}...')
+
     res = session.get(comic_url)
 #    res.raise_for_status()
 
@@ -185,4 +185,4 @@ else:
 # implement if __name__ == "__main__":
 #     execute only if run as a script
 #     pass 0/1//True/False for run mode via main(mode)?
-##    main(mode)
+#     main(mode)
