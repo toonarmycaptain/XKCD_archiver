@@ -12,18 +12,28 @@ Feature updates - multithreading, max 100 comics/thread.
 To implement dual modes required iterating backwards through the comics in
 each thread until already downloaded comic found.
 
-Planned change to use JSON data, rather than downloading page for each comic:
-    response = requests.get('http://xkcd.com/comic#(eg 1905)/info.0.json')
-    json.loads(response.text) <- returns a dict with the info
+Planned:
+    - change to use JSON data, rather than downloading page for each comic:
+        - response = requests.get('http://xkcd.com/comic#(eg1905)/info.0.json')
+        - json.loads(response.text) <- returns a dict with the info
 
-Planned feature update where title text is in properties of downloaded image.
+    - feature update where title text is in properties of downloaded image.
 
-Planned feature update implement counts to provide feedback as to how many
-comics downloaded in current run.
+    - feature update implement counts to provide feedback as to how many
+        comics downloaded in current run.
 
-Planned development - implement if __name__ == "__main__":
-    - use a second script, run with a command line arguement for Quick/Full
-    - will display "downloading comic x" or error messages, sans imput text
+    - implement if __name__ == "__main__":
+        - use a second script, run with a command line arguement for Quick/Full
+        - will display "downloading comic x" or error messages, sans imput text
+        - ability to run via another script, or use separate backgorund process
+            by default
+
+    - Implement a GUI.
+
+    - Check to see if archive folder already exists,
+        - give option to set location/name for new folder
+        - Use datafile/mod to script itself(?) to default to an existing folder
+
 
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
