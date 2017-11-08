@@ -6,9 +6,9 @@ before_script:
 
 test:
   script:
-  - pip install time
   - pip install os
   - pip install threading
+  - pip install time
 
   - pip install requests
   - pip install bs4
