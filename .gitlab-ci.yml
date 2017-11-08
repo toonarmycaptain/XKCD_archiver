@@ -3,7 +3,13 @@ image: python:latest
 
 before_script:
   - python -V                                   # Print out python version for debugging
+  - pip install time
+  - pip install os
+  - pip install threading
 
+  - pip install requests
+  - pip install bs4
+  
 test:
   script:
   - python downloadXKCD.py test
@@ -34,10 +40,3 @@ pages:
   - master
 
 
-install:
-  - pip install time
-  - pip install os
-  - pip install threading
-
-  - pip install requests
-  - pip install bs4
