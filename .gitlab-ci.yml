@@ -34,11 +34,10 @@ pages:
   - master
 
 
-all_tests:
-  script:
-  - python -vvv pip install time
-  - python -m pip install os
-  - python -m pip install threading
+install:
+  - pip install time
+  - pip install os
+  - pip install threading
 
-  - python -m pip install requests
-  - python -m pip install bs4
+  - pip install requests
+  - pip install bs4
