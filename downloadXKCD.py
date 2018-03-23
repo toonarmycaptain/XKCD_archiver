@@ -1,7 +1,7 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
-# downloadXKCD.py - Downloads every single XKCD comic.
-# Version 1.0
+# downloadXkcd.py - Downloads every single XKCD comic.
+# version 1.1.0.dev1
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -25,9 +25,9 @@ Planned:
         comics downloaded in current run.
 
     - implement if __name__ == "__main__":
-        - use a second script, run with a command line arguement for Quick/Full
-        - will display "downloading comic x" or error messages, sans imput text
-        - ability to run via another script, or use separate backgorund process
+        - use a second script, run with a command line argument for Quick/Full
+        - will display "downloading comic x" or error messages, sans input text
+        - ability to run via another script, or use separate background process
             by default
 
     - Implement a GUI.
@@ -36,14 +36,20 @@ Planned:
         - give option to set location/name for new folder
         - Use datafile/mod to script itself(?) to default to an existing folder
 
+		- Implement logging
+		- per run, eg performance/runtime, comics downloaded
+		- errors
 
+1.1.0 Changes:
+    -implemented relative path for virtualenv
+	- typos fixed: 'imput,' 'arguement,' 'backgorund' in docstring
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.0'
+__version__ = '1.1.0.dev1'
 
 import time
 import os
@@ -51,7 +57,6 @@ import threading
 
 import requests
 import bs4
-
 
 print('This script searches xkcd.com and downloads each comic.')
 
