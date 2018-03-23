@@ -1,7 +1,7 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
 # downloadXkcd.py - Downloads every single XKCD comic.
-# version 1.1.2.dev1
+# version 1.1.3.dev1
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -54,21 +54,23 @@ Planned:
     - explicitly pass variables
         (depreciating use of globals aids import functionality)
 
+1.1.3 changes:
+    implement json
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.1.2.dev1'
+__version__ = '1.1.3.dev1'
 
 import time
 import os
+import string
 import sys
 import threading
 
 import requests
-import bs4
 
 
 def is_venv():
@@ -128,6 +130,16 @@ def download_image(session, comic_url, filename):
     #       is in properties of downloaded image.
 
 
+def comic_json(comic_number):
+    try:
+        return requests.get('https://xkcd.com/'+str(comic_number)+'/info.0.json').json()
+    except:
+        print(comic_number)
+
+
+def punct_stripper():
+    return str.maketrans('', '', string.punctuation)
+
 def threaded_download(comic_start, comic_end, direction, run_mode):
     """
     Iterate over comic numbers, download comic page, find comic image, check if
@@ -142,26 +154,21 @@ def threaded_download(comic_start, comic_end, direction, run_mode):
     Returns: None
     """
     with requests.Session() as session:
-        for url_number in range(comic_start, comic_end, direction):
-            try:
-                res = session.get(f'http://xkcd.com/{url_number}')
-                res.raise_for_status()
-                soup = bs4.BeautifulSoup(res.text, 'lxml')
-            except requests.exceptions.HTTPError:
+        for comic_number in range(comic_start, comic_end, direction):
+            if comic_number == 404:
                 continue
-            # Find the URL of the comic image.
-            comic_image = soup.select_one('#comic img[src]')
-            if not comic_image:
-                print(f'Could not find comic image {url_number}.')
-                continue
-
             try:
-                comic_url = 'https:' + comic_image['src']
-                download_image(session, comic_url,
-                               f'{url_number} - {os.path.basename(comic_url)}')
-            except requests.exceptions.MissingSchema:
-                print(f'--- Missing comic {url_number}.---')
-                continue  # skip this comic
+                comic = comic_json(comic_number)  # get comic json data
+                title_cleaner = punct_stripper()
+                clean_title = comic['safe_title'].translate(title_cleaner)
+                if not clean_title.isalpha():
+                    clean_title = os.path.basename(comic['img'])
+                assert comic_number == comic['num']
+                base_url, file_type = os.path.splitext(comic['img'])
+                download_image(
+                        session,
+                        comic['img'],
+                        f"{comic['num']} - {clean_title}{file_type}")
             except FileExistsError:
                 # print(f'--- Comic {url_number} already downloaded.---')
                 if run_mode:  # Full mode
@@ -170,6 +177,7 @@ def threaded_download(comic_start, comic_end, direction, run_mode):
                     # print(f'Finished updating archive, '
                     #       f'comics {comic_start}-{comic_end}.')
                     break
+
 
 
 def download_comics(run_mode):
@@ -188,25 +196,33 @@ def download_comics(run_mode):
     os.makedirs('xkcd', exist_ok=True)   # store comics in ./xkcd
 
     # Get latest comic number:
-    url = 'https://xkcd.com'
-    res = requests.get(url)
-    res.raise_for_status()
-    soup = bs4.BeautifulSoup(res.text, 'lxml')
-    penultimate_comic = soup.select('a[rel="prev"]')[0]
-    # penultimate Comic +1 for most recent comic
-    latest_comic = int(penultimate_comic.get('href')[1:-1]) + 1
+    url = 'https://xkcd.com/info.0.json'
+    latest_data = requests.get(url).json()
+    latest_comic = latest_data['num']
 
     # Create and start the Thread objects.
     download_threads = []  # a list of all the Thread objects
-    for i in range(0, latest_comic, 100):
+    for i in range(1, latest_comic-100, 100):
         if run_mode:
-            download_thread = threading.Thread(target=threaded_download,
-                                               args=(i, i+100, 1, run_mode))
+            download_thread = threading.Thread(
+                    target=threaded_download,
+                    args=(i, i+100, 1, run_mode))
         if not run_mode:  # quick mode iterates back until pre-existing file
-            download_thread = threading.Thread(target=threaded_download,
-                                               args=(i+100, i, -1, run_mode))
+            download_thread = threading.Thread(
+                    target=threaded_download,
+                    args=(i+100, i, -1, run_mode))
         download_threads.append(download_thread)
         download_thread.start()
+    if run_mode:
+        download_thread = threading.Thread(
+                target=threaded_download,
+                args=(latest_comic-100, latest_comic+1, 1, run_mode))
+    if not run_mode:
+        download_thread = threading.Thread(
+                target=threaded_download,
+                args=(i+100, latest_comic-1, -1, run_mode))
+    download_threads.append(download_thread)
+    download_thread.start()
 
     # Wait for all threads to end.
     for download_thread in download_threads:
