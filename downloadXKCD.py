@@ -1,7 +1,7 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
 # downloadXkcd.py - Downloads every single XKCD comic.
-# version 1.1.3.dev1
+# version 1.2.0
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -54,7 +54,7 @@ Planned:
     - explicitly pass variables
         (depreciating use of globals aids import functionality)
 
-1.1.3 changes:
+1.2.0 changes:
     implement json
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
