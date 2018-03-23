@@ -19,8 +19,11 @@ downloadXKCD GUI - run downloadXKCD inside a GUI using Tkinter
     - added button ghosting/disable functionality
 
 
->>>make full_mode button disappear after run NB when adding option for
-    archive locations, will need to rejig UI
+1.2.3 changes:
+    - refactored widget state change into separate function
+    - unpassed quick/full button refs no longer stored in variables
+
+>>>rearrange/format label/button placement
 >>>run download code in a separate thread, but don't allow multiple button
 clicks to spawn multiple runs concurrently.
 
@@ -29,7 +32,7 @@ Created on Wed Feb 28 11:23:42 2018
 @author: David Antonini // toonarmycaptain
 """
 
-__version__ = '1.2.2+GUI'
+__version__ = '1.2.3+GUI'
 
 import sys
 import tkinter as tk
@@ -54,8 +57,8 @@ def venv_test(frame):
         venv_text = 'Script running outside virtualenv or venv.'
 
     venv = tk.Label(
-        frame,
-        text=venv_text)
+            frame,
+            text=venv_text)
     return venv
 
 
@@ -71,6 +74,21 @@ def mode_picked(mode):
     downloadXKCD.download_comics(mode)
 
 
+def set_state(frame, new_state):
+    """
+    Sets state of frame's child widgets, and updates GUI.
+
+    Args:
+        frame (tkinter.Frame): frame to perform action on.
+        new_state (str): the desired new state of child widgets.
+
+    Returns: None
+    """
+    for child in frame.winfo_children():
+        child.configure(state=new_state)
+    frame.update()
+
+
 def run_quick_mode():
     """
     Runs downloadXKCD download logic in quick/update mode.
@@ -78,15 +96,11 @@ def run_quick_mode():
 
     Returns: None
     """
-
-    for child in quick_mode_frame.winfo_children():
-        child.configure(state='disable')
-    main_window.update()
+    set_state(quick_mode_frame, 'disable')
 
     downloadXKCD.download_comics(False)
 
-    for child in quick_mode_frame.winfo_children():
-        child.configure(state='active')
+    set_state(quick_mode_frame, 'active')
 
 
 def run_full_mode():
@@ -96,10 +110,7 @@ def run_full_mode():
 
     Returns: None
     """
-    for child in full_mode_frame.winfo_children():
-        child.configure(state='disable')
-
-    main_window.update()
+    set_state(full_mode_frame, 'disable')
     downloadXKCD.download_comics(True)
 
 
@@ -125,7 +136,7 @@ def full_button(frame):
                                  command=run_full_mode)
     full_mode_expl = tk.Label(frame,
                               text='Checks for every comic, '
-                                   'downloads undownloaded comics.')
+                              'downloads undownloaded comics.')
     full_mode_button.pack()
     full_mode_expl.pack()
     return frame
@@ -145,7 +156,7 @@ def quick_button(frame):
                                   command=run_quick_mode)
     quick_mode_expl = tk.Label(frame,
                                text='Or "refresh mode", checked until it '
-                                    'finds a previously downloaded comic.')
+                               'finds a previously downloaded comic.')
     quick_mode_button.pack()
     quick_mode_expl.pack()
     return frame
@@ -167,12 +178,13 @@ def mode_frame_set(main_window):
     mode_opt.pack()
 
     full_mode_frame = tk.Frame(mode_frame)
-    full_mode_button = full_button(full_mode_frame)
+#    full_mode_button = full_button(full_mode_frame)
+    full_button(full_mode_frame)
     full_mode_frame.pack()
 
     quick_mode_frame = tk.Frame(mode_frame)
-    quick_mode_button = quick_button(quick_mode_frame)
-    #    quick_button(quick_mode_frame)
+#    quick_mode_button = quick_button(quick_mode_frame)
+    quick_button(quick_mode_frame)
     quick_mode_frame.pack()
 
     mode_frame.pack()
@@ -191,7 +203,7 @@ def main_setup():
 
     descr = tk.Label(main_window,
                      text='This script searches xkcd.com '
-                          'and downloads each comic.')
+                     'and downloads each comic.')
     descr.pack()
 
     venv = venv_test(main_window)
