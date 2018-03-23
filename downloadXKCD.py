@@ -1,5 +1,7 @@
-#! python3
-# downloadXkcd.py - Downloads every single XKCD comic.
+#!./downloadXKCD_env/Scripts/python
+# ^ sets script to run in virtual environment inside project directory.
+# downloadXKCD.py - Downloads every single XKCD comic.
+# Version 1.0
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -40,6 +42,9 @@ Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
+
+__version__ = '1.0'
+
 import time
 import os
 import threading
@@ -49,6 +54,20 @@ import bs4
 
 
 print('This script searches xkcd.com and downloads each comic.')
+
+# Test if successfully running in virtualenv
+import sys
+
+
+def is_venv():
+    return (hasattr(sys, 'real_prefix') or
+            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
+
+
+if is_venv():
+    print('This script is running in its own virtualenv.')
+else:
+    print('outside virtualenv or venv')
 
 # User input for full run or until finding already downloaded comic.
 print('There are two mode options:\n'
@@ -66,15 +85,14 @@ while True:
             run_mode = False  # Quick mode
             break
         if int(run_mode_selection) == 1:
-            run_mode = True    # Full mode
+            run_mode = True  # Full mode
             break
     except ValueError:
         continue
 
 start = time.time()
 
-
-os.makedirs('xkcd', exist_ok=True)   # store comics in ./xkcd
+os.makedirs('xkcd', exist_ok=True)  # store comics in ./xkcd
 
 
 def download_image(session, comic_url, filename):
@@ -89,7 +107,7 @@ def download_image(session, comic_url, filename):
     # print(f'Downloading page http://xkcd.com/{url_number}...')
 
     res = session.get(comic_url)
-#    res.raise_for_status()
+    #    res.raise_for_status()
 
     with open(os.path.join('xkcd', filename), 'xb') as image_file:
         print(f'Downloading image {comic_url}...')
@@ -100,8 +118,8 @@ def download_image(session, comic_url, filename):
 
 #    image_file.close()
 
-    # TODO: Needs feature update where title text
-    #       is in properties of downloaded image.
+# TODO: Needs feature update where title text
+#       is in properties of downloaded image.
 
 
 def download_xkcd(comic_start, comic_end, direction):
@@ -154,16 +172,15 @@ penultimate_comic = soup.select('a[rel="prev"]')[0]
 # penultimate Comic +1 for most recent comic
 latest_comic = int(penultimate_comic.get('href')[1:-1]) + 1
 
-
 # Create and start the Thread objects.
 download_threads = []  # a list of all the Thread objects
 for i in range(0, latest_comic, 100):
     if run_mode:
         download_thread = threading.Thread(target=download_xkcd,
-                                           args=(i, i+100, 1))
+                                           args=(i, i + 100, 1))
     if not run_mode:  # quick mode iterates back until pre-existing file
         download_thread = threading.Thread(target=download_xkcd,
-                                           args=(i+100, i, -1))
+                                           args=(i + 100, i, -1))
     download_threads.append(download_thread)
     download_thread.start()
 
@@ -175,8 +192,8 @@ print('Done.')
 
 timetotal = time.time() - start
 if timetotal > 60:
-    mins = timetotal//60
-    sec = timetotal-mins*60
+    mins = timetotal // 60
+    sec = timetotal - mins * 60
     print(f"Runtime: {mins:.0f} minutes, {sec:.2f} seconds")
 else:
     print(f"Runtime: {timetotal:.2f} seconds")
