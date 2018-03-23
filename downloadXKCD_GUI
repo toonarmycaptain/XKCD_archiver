@@ -12,103 +12,200 @@ downloadXKCD GUI - run downloadXKCD inside a GUI using Tkinter
     - added Quit button
 
 1.2.2 changes:
-    put window/button setup in functions to allow eliminate repetition
+    - refactored venv
+    - refactored window/GUI setup, button/widget creation into
+        separate functions to eliminate repitition
+    - fixed documentation
+    - added button ghosting/disable functionality
 
 >>>make full_mode button disappear after run NB when adding option for
-    archinve locations, will need to rejig UI
+    archive locations, will need to rejig UI
 >>>run download code in a separate thread, but don't allow multiple button
 clicks to spawn multiple runs concurrently.
+
 Created on Wed Feb 28 11:23:42 2018
 
 @author: David Antonini // toonarmycaptain
 """
 
-__version__ = '1.2.1+GUI'
+__version__ = '1.2.2+GUI'
 
 import sys
 import tkinter as tk
 
-import downloadXKCD_1_2_1 as downloadXKCD
+import downloadXKCD
 
 
-def venv_test():
+def venv_test(frame):
+    """
+    Test if script is running in a virtualenv or system python, returning a
+    label with test result.
+
+    Args:
+        frame (tkinter.Frame): frame label will be placed in.
+
+    Returns: tkinter.Label
+    """
     # Test if successfully running in virtualenv
     if downloadXKCD.is_venv():
-        venv = tk.Label(
-                main_window,
-                text='This script is running in its own virtualenv.')
+        venv_text = 'This script is running in its own virtualenv.'
     else:
-        venv = tk.Label(
-                main_window,
-                text='Script running outside virtualenv or venv.')
+        venv_text = 'Script running outside virtualenv or venv.'
+
+    venv = tk.Label(
+        frame,
+        text=venv_text)
     return venv
 
 
 def mode_picked(mode):
-    #    mode_frame.destroy()
+    """
+    Runs downloadXKCD download script in chosen mode.
+
+    Args:
+        mode (bool): True for full, False for quick/update
+
+    Returns: None
+    """
     downloadXKCD.download_comics(mode)
 
 
-def quick_mode():
+def run_quick_mode():
+    """
+    Runs downloadXKCD download logic in quick/update mode.
+    Ghosts/disables while running to prevent multiple runs.
+
+    Returns: None
+    """
+
+    for child in quick_mode_frame.winfo_children():
+        child.configure(state='disable')
+    main_window.update()
 
     downloadXKCD.download_comics(False)
 
+    for child in quick_mode_frame.winfo_children():
+        child.configure(state='active')
 
-def full_mode():
-    mode_frame.destroy()
+
+def run_full_mode():
+    """
+    Runs downloadXKCD download logic in full mode.
+    Ghosts/disables button and label, to prevent multiple full runs.
+
+    Returns: None
+    """
+    for child in full_mode_frame.winfo_children():
+        child.configure(state='disable')
+
+    main_window.update()
     downloadXKCD.download_comics(True)
-    quick_mode.pack()
+
 
 def regular_exit():
-    """Check whether exit status should be 0 or 1, (one is error)"""
+    """
+    Check whether exit status should be 0 or 1, (one is error), exits.
+    """
     main_window.destroy()
     sys.exit(0)
 
 
-main_window = tk.Tk()
-main_window.title(f'XKCD archiver v{__version__}')
-main_window.geometry('400x400')
+def full_button(frame):
+    """
+    Creates a Full mode button, with explanatory label.
 
-venv = venv_test()
+    Args:
+        frame(tkinter.Frame)
 
-descr = tk.Label(main_window,
-                 text='This script searches xkcd.com '
-                 'and downloads each comic.')
-descr.pack()
-venv.pack()
+    Returns: tkinter.Frame
+    """
+    full_mode_button = tk.Button(frame,
+                                 text='Full mode',
+                                 command=run_full_mode)
+    full_mode_expl = tk.Label(frame,
+                              text='Checks for every comic, '
+                                   'downloads undownloaded comics.')
+    full_mode_button.pack()
+    full_mode_expl.pack()
+    return frame
 
-mode_frame = tk.Frame(main_window)
+
+def quick_button(frame):
+    """
+    Creates a quick mode button, with explanatory label.
+
+    Args:
+        frame(tkinter.Frame)
+
+    Returns: tkinter.Frame
+    """
+    quick_mode_button = tk.Button(frame,
+                                  text='Quick mode',
+                                  command=run_quick_mode)
+    quick_mode_expl = tk.Label(frame,
+                               text='Or "refresh mode", checked until it '
+                                    'finds a previously downloaded comic.')
+    quick_mode_button.pack()
+    quick_mode_expl.pack()
+    return frame
 
 
-mode_opt = tk.Label(mode_frame,
-                    text='There are two mode options:\n')
-mode_opt.pack()
+def mode_frame_set(main_window):
+    """
+    Creates frame with explanatory text, mode buttons/text each in subframes.
 
-quick_mode = tk.Button(mode_frame,
-                       text='Quick mode',
-                       command=quick_mode)
-quick_mode_expl = tk.Label(
-        mode_frame,
-        text='Or "refresh mode", checked until it '
-        'finds a previously downloaded comic.')
-quick_mode.pack()
-quick_mode_expl.pack()
+    Args:
+        frame(tkinter.Frame)
 
-full_mode = tk.Button(mode_frame,
-                      text='Full mode',
-                      command=full_mode)
-full_mode_expl = tk.Label(
-        mode_frame,
-        text='Checks for every comic, '
-        'downloads undownloaded comics.')
-full_mode.pack()
-full_mode_expl.pack()
+    Returns: tkinter.Frame
+    """
+    mode_frame = tk.Frame(main_window)
 
-mode_frame.pack()
+    mode_opt = tk.Label(mode_frame,
+                        text='There are two mode options:\n')
+    mode_opt.pack()
 
-exit_app = tk.Button(main_window, text='Quit', command=regular_exit).pack()
+    full_mode_frame = tk.Frame(mode_frame)
+    full_mode_button = full_button(full_mode_frame)
+    full_mode_frame.pack()
 
-tk.mainloop()
+    quick_mode_frame = tk.Frame(mode_frame)
+    quick_mode_button = quick_button(quick_mode_frame)
+    #    quick_button(quick_mode_frame)
+    quick_mode_frame.pack()
 
-#if __name__ == '__main__':
-#    main_setup()
+    mode_frame.pack()
+    return mode_frame, full_mode_frame, quick_mode_frame
+
+
+def main_setup():
+    """
+    Sets up main Tkinter window and widgets.
+
+    Returns: tkinter.Frame, tkinter.Button
+    """
+    main_window = tk.Tk()
+    main_window.title(f'XKCD archiver v{__version__}')
+    main_window.geometry('400x400')
+
+    descr = tk.Label(main_window,
+                     text='This script searches xkcd.com '
+                          'and downloads each comic.')
+    descr.pack()
+
+    venv = venv_test(main_window)
+    venv.pack()
+
+    mode_frame, full_mode_frame, quick_mode_frame = mode_frame_set(main_window)
+
+    exit_app = tk.Button(main_window,
+                         text='Quit',
+                         command=main_window.destroy)
+    exit_app.pack()
+
+    return main_window, mode_frame, full_mode_frame, quick_mode_frame, exit_app
+
+
+if __name__ == '__main__':
+    main_window, mode_frame, full_mode_frame, quick_mode_frame, exit_app = main_setup()
+    main_window.mainloop()
