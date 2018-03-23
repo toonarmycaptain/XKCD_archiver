@@ -1,7 +1,7 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
 # downloadXkcd.py - Downloads every single XKCD comic.
-# version 1.1.1.dev1
+# version 1.1.2.dev1
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -49,13 +49,18 @@ Planned:
     - added function documentation
     - print "Downloading image...." only in quick mode.
 
+1.1.2 changes:
+    - changed venv not activated text, prefixed with "Script running "
+    - explicitly pass variables
+        (depreciating use of globals aids import functionality)
+
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.1.1.dev1'
+__version__ = '1.1.2.dev1'
 
 import time
 import os
@@ -123,7 +128,7 @@ def download_image(session, comic_url, filename):
     #       is in properties of downloaded image.
 
 
-def threaded_download(comic_start, comic_end, direction):
+def threaded_download(comic_start, comic_end, direction, run_mode):
     """
     Iterate over comic numbers, download comic page, find comic image, check if
     file with comic name already exists, if not, download comic image.
@@ -132,6 +137,7 @@ def threaded_download(comic_start, comic_end, direction):
         comic_start (int): the number of the first comic thread iterates over.
         comic_end (int): the number of the last comic thread iterates over.
         direction (int): 1 or -1 iterating forwards or backwards based on mode.
+        run_mode (bool): the run mode - True for full, False for quick.
 
     Returns: None
     """
@@ -166,11 +172,14 @@ def threaded_download(comic_start, comic_end, direction):
                     break
 
 
-def download_comics():
+def download_comics(run_mode):
     """
     Starts a number of threads based on the total number of comics.
     Executes download code inside each thread on 100 comics each.
     Times execution.
+
+    Args:
+        run_mode (bool): Sets run_mode quick/full.
 
     returns: None
     """
@@ -192,10 +201,10 @@ def download_comics():
     for i in range(0, latest_comic, 100):
         if run_mode:
             download_thread = threading.Thread(target=threaded_download,
-                                               args=(i, i+100, 1))
+                                               args=(i, i+100, 1, run_mode))
         if not run_mode:  # quick mode iterates back until pre-existing file
             download_thread = threading.Thread(target=threaded_download,
-                                               args=(i+100, i, -1))
+                                               args=(i+100, i, -1, run_mode))
         download_threads.append(download_thread)
         download_thread.start()
 
@@ -220,7 +229,7 @@ if __name__ == "__main__":
     if is_venv():
         print('This script is running in its own virtualenv.')
     else:
-        print('outside virtualenv or venv')
+        print('Script running outside virtualenv or venv')
 
     # User input for full run or until finding already downloaded comic.
     print('There are two mode options:\n'
@@ -232,7 +241,6 @@ if __name__ == "__main__":
 
     run_mode = run_mode()  # Prompt user to set run_mode
 
-    download_comics()  # Download the comics
+    download_comics(run_mode)  # Download the comics
 
     print('Done.')
-
