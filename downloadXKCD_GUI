@@ -1,0 +1,114 @@
+#!./downloadXKCD_env/Scripts/pythonw.exe
+# downloadXKCD GUI.py - run downloadXKCD inside a GUI
+"""
+downloadXKCD GUI - run downloadXKCD inside a GUI using Tkinter
+
+1.1.1 changes:
+    -config download_comics to take run_mode as an argument
+
+1.2.1 changes:
+    - added version number to main window title.
+    - fixed/updated venv
+    - added Quit button
+
+1.2.2 changes:
+    put window/button setup in functions to allow eliminate repetition
+
+>>>make full_mode button disappear after run NB when adding option for
+    archinve locations, will need to rejig UI
+>>>run download code in a separate thread, but don't allow multiple button
+clicks to spawn multiple runs concurrently.
+Created on Wed Feb 28 11:23:42 2018
+
+@author: David Antonini // toonarmycaptain
+"""
+
+__version__ = '1.2.1+GUI'
+
+import sys
+import tkinter as tk
+
+import downloadXKCD_1_2_1 as downloadXKCD
+
+
+def venv_test():
+    # Test if successfully running in virtualenv
+    if downloadXKCD.is_venv():
+        venv = tk.Label(
+                main_window,
+                text='This script is running in its own virtualenv.')
+    else:
+        venv = tk.Label(
+                main_window,
+                text='Script running outside virtualenv or venv.')
+    return venv
+
+
+def mode_picked(mode):
+    #    mode_frame.destroy()
+    downloadXKCD.download_comics(mode)
+
+
+def quick_mode():
+
+    downloadXKCD.download_comics(False)
+
+
+def full_mode():
+    mode_frame.destroy()
+    downloadXKCD.download_comics(True)
+    quick_mode.pack()
+
+def regular_exit():
+    """Check whether exit status should be 0 or 1, (one is error)"""
+    main_window.destroy()
+    sys.exit(0)
+
+
+main_window = tk.Tk()
+main_window.title(f'XKCD archiver v{__version__}')
+main_window.geometry('400x400')
+
+venv = venv_test()
+
+descr = tk.Label(main_window,
+                 text='This script searches xkcd.com '
+                 'and downloads each comic.')
+descr.pack()
+venv.pack()
+
+mode_frame = tk.Frame(main_window)
+
+
+mode_opt = tk.Label(mode_frame,
+                    text='There are two mode options:\n')
+mode_opt.pack()
+
+quick_mode = tk.Button(mode_frame,
+                       text='Quick mode',
+                       command=quick_mode)
+quick_mode_expl = tk.Label(
+        mode_frame,
+        text='Or "refresh mode", checked until it '
+        'finds a previously downloaded comic.')
+quick_mode.pack()
+quick_mode_expl.pack()
+
+full_mode = tk.Button(mode_frame,
+                      text='Full mode',
+                      command=full_mode)
+full_mode_expl = tk.Label(
+        mode_frame,
+        text='Checks for every comic, '
+        'downloads undownloaded comics.')
+full_mode.pack()
+full_mode_expl.pack()
+
+mode_frame.pack()
+
+exit_app = tk.Button(main_window, text='Quit', command=regular_exit).pack()
+
+tk.mainloop()
+
+#if __name__ == '__main__':
+#    main_setup()
