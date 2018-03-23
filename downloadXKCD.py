@@ -1,7 +1,7 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
 # downloadXkcd.py - Downloads every single XKCD comic.
-# version 1.1.0.dev1
+# version 1.1.1.dev1
 """
 Webscraper that downloads xkcd comics.
 Checks if comic already downloaded so for increased efficiency on rerun.
@@ -36,68 +36,66 @@ Planned:
         - give option to set location/name for new folder
         - Use datafile/mod to script itself(?) to default to an existing folder
 
-		- Implement logging
-		- per run, eg performance/runtime, comics downloaded
-		- errors
+        - Implement logging
+        - per run, eg performance/runtime, comics downloaded
+        - errors
 
-1.1.0 Changes:
-    -implemented relative path for virtualenv
-	- typos fixed: 'imput,' 'arguement,' 'backgorund' in docstring
+1.1.0 changes:
+    - implemented relative path for virtualenv
+    - typos fixed: 'imput,' 'arguement,' 'backgorund' in docstring
+
+1.1.1 changes:
+    - refactored to run as import module/implemented if __name__ == "__main__":
+    - added function documentation
+    - print "Downloading image...." only in quick mode.
+
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.1.0.dev1'
+__version__ = '1.1.1.dev1'
 
 import time
 import os
+import sys
 import threading
 
 import requests
 import bs4
 
-print('This script searches xkcd.com and downloads each comic.')
-
-# Test if successfully running in virtualenv
-import sys
-
 
 def is_venv():
+    """
+    Test if successfully running inside virtualenv.
+
+    returns: bool
+    """
     return (hasattr(sys, 'real_prefix') or
             (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
 
 
-if is_venv():
-    print('This script is running in its own virtualenv.')
-else:
-    print('outside virtualenv or venv')
+def run_mode():
+    """
+    Asks user to decide whether to run in quick/update or full mode.
+    Returns True for full mode, False for quick/update
 
-# User input for full run or until finding already downloaded comic.
-print('There are two mode options:\n'
-      '\nQuick mode: Or "refresh mode", checked until it finds '
-      'a previously downloaded comic.\n'
-      ' Full mode: Checks for every comic, downloads undownloaded comics.\n'
-      )
-
-while True:
-    try:
-        print('Please select mode:\n'
-              'Enter 0 for Quick mode, or 1 for Full Mode')
-        run_mode_selection = input('Mode: ')
-        if int(run_mode_selection) == 0:
-            run_mode = False  # Quick mode
-            break
-        if int(run_mode_selection) == 1:
-            run_mode = True  # Full mode
-            break
-    except ValueError:
-        continue
-
-start = time.time()
-
-os.makedirs('xkcd', exist_ok=True)  # store comics in ./xkcd
+    returns: int
+    """
+    while True:
+        try:
+            print('Please select mode:\n'
+                  'Enter 0 for Quick mode, or 1 for Full Mode')
+            run_mode_selection = input('Mode: ')
+            if int(run_mode_selection) == 0:
+                return False  # Quick mode
+                break
+            if int(run_mode_selection) == 1:
+                return True    # Full mode
+                break
+        except ValueError:
+            continue
 
 
 def download_image(session, comic_url, filename):
@@ -112,22 +110,20 @@ def download_image(session, comic_url, filename):
     # print(f'Downloading page http://xkcd.com/{url_number}...')
 
     res = session.get(comic_url)
-    #    res.raise_for_status()
+#    res.raise_for_status()
 
     with open(os.path.join('xkcd', filename), 'xb') as image_file:
-        print(f'Downloading image {comic_url}...')
+        if not run_mode:
+            print(f'Downloading image {comic_url}...')
 
         for chunk in res.iter_content(100000):
             image_file.write(chunk)
 
-
-#    image_file.close()
-
-# TODO: Needs feature update where title text
-#       is in properties of downloaded image.
+    # TODO: Needs feature update where title text
+    #       is in properties of downloaded image.
 
 
-def download_xkcd(comic_start, comic_end, direction):
+def threaded_download(comic_start, comic_end, direction):
     """
     Iterate over comic numbers, download comic page, find comic image, check if
     file with comic name already exists, if not, download comic image.
@@ -136,6 +132,8 @@ def download_xkcd(comic_start, comic_end, direction):
         comic_start (int): the number of the first comic thread iterates over.
         comic_end (int): the number of the last comic thread iterates over.
         direction (int): 1 or -1 iterating forwards or backwards based on mode.
+
+    Returns: None
     """
     with requests.Session() as session:
         for url_number in range(comic_start, comic_end, direction):
@@ -168,43 +166,73 @@ def download_xkcd(comic_start, comic_end, direction):
                     break
 
 
-# Get latest comic number:
-url = 'https://xkcd.com'
-res = requests.get(url)
-res.raise_for_status()
-soup = bs4.BeautifulSoup(res.text, 'lxml')
-penultimate_comic = soup.select('a[rel="prev"]')[0]
-# penultimate Comic +1 for most recent comic
-latest_comic = int(penultimate_comic.get('href')[1:-1]) + 1
+def download_comics():
+    """
+    Starts a number of threads based on the total number of comics.
+    Executes download code inside each thread on 100 comics each.
+    Times execution.
 
-# Create and start the Thread objects.
-download_threads = []  # a list of all the Thread objects
-for i in range(0, latest_comic, 100):
-    if run_mode:
-        download_thread = threading.Thread(target=download_xkcd,
-                                           args=(i, i + 100, 1))
-    if not run_mode:  # quick mode iterates back until pre-existing file
-        download_thread = threading.Thread(target=download_xkcd,
-                                           args=(i + 100, i, -1))
-    download_threads.append(download_thread)
-    download_thread.start()
+    returns: None
+    """
+    start = time.time()
 
-# Wait for all threads to end.
-for download_thread in download_threads:
-    download_thread.join()
+    os.makedirs('xkcd', exist_ok=True)   # store comics in ./xkcd
 
-print('Done.')
+    # Get latest comic number:
+    url = 'https://xkcd.com'
+    res = requests.get(url)
+    res.raise_for_status()
+    soup = bs4.BeautifulSoup(res.text, 'lxml')
+    penultimate_comic = soup.select('a[rel="prev"]')[0]
+    # penultimate Comic +1 for most recent comic
+    latest_comic = int(penultimate_comic.get('href')[1:-1]) + 1
 
-timetotal = time.time() - start
-if timetotal > 60:
-    mins = timetotal // 60
-    sec = timetotal - mins * 60
-    print(f"Runtime: {mins:.0f} minutes, {sec:.2f} seconds")
-else:
-    print(f"Runtime: {timetotal:.2f} seconds")
+    # Create and start the Thread objects.
+    download_threads = []  # a list of all the Thread objects
+    for i in range(0, latest_comic, 100):
+        if run_mode:
+            download_thread = threading.Thread(target=threaded_download,
+                                               args=(i, i+100, 1))
+        if not run_mode:  # quick mode iterates back until pre-existing file
+            download_thread = threading.Thread(target=threaded_download,
+                                               args=(i+100, i, -1))
+        download_threads.append(download_thread)
+        download_thread.start()
 
-# TODO:
-# implement if __name__ == "__main__":
-#     execute only if run as a script
-#     pass 0/1//True/False for run mode via main(mode)?
-#     main(mode)
+    # Wait for all threads to end.
+    for download_thread in download_threads:
+        download_thread.join()
+
+    timetotal = time.time() - start
+    if timetotal > 60:
+        mins = timetotal//60
+        sec = timetotal-mins*60
+        print(f"Runtime: {mins:.0f} minutes, {sec:.2f} seconds")
+    else:
+        print(f"Runtime: {timetotal:.2f} seconds")
+
+
+if __name__ == "__main__":
+
+    print('This script searches xkcd.com and downloads each comic.')
+
+    # Test if successfully running in virtualenv
+    if is_venv():
+        print('This script is running in its own virtualenv.')
+    else:
+        print('outside virtualenv or venv')
+
+    # User input for full run or until finding already downloaded comic.
+    print('There are two mode options:\n'
+          '\nQuick mode: Or "refresh mode", checked until it finds '
+          'a previously downloaded comic.\n'
+          ' Full mode: Checks for every comic, '
+          'downloads undownloaded comics.\n'
+          )
+
+    run_mode = run_mode()  # Prompt user to set run_mode
+
+    download_comics()  # Download the comics
+
+    print('Done.')
+
