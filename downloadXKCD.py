@@ -1,44 +1,17 @@
 #!./downloadXKCD_env/Scripts/python
 # ^ sets script to run in virtual environment inside project directory.
-# downloadXkcd.py - Downloads every single XKCD comic.
-# version 1.2.0
+# downloadXKCD.py - Downloads every single XKCD comic.
+# version 1.2.1.devl
 """
 Webscraper that downloads xkcd comics.
-Checks if comic already downloaded so for increased efficiency on rerun.
+Uses multithreading, checks if comic already downloaded for increased
+    efficiency on rerun.
 
 Two run modess: Full and Quick
 Full mode goes through every comic.
-Quick mode quits when it reaches the first comic that is already downloaded.
+Quick mode checked latest 100 comics, quits when it reaches the
+    first comic that is already downloaded.
 
-Feature updates - multithreading, max 100 comics/thread.
-To implement dual modes required iterating backwards through the comics in
-each thread until already downloaded comic found.
-
-Planned:
-    - change to use JSON data, rather than downloading page for each comic:
-        - response = requests.get('http://xkcd.com/comic#(eg1905)/info.0.json')
-        - json.loads(response.text) <- returns a dict with the info
-
-    - feature update where title text is in properties of downloaded image.
-
-    - feature update implement counts to provide feedback as to how many
-        comics downloaded in current run.
-
-    - implement if __name__ == "__main__":
-        - use a second script, run with a command line argument for Quick/Full
-        - will display "downloading comic x" or error messages, sans input text
-        - ability to run via another script, or use separate background process
-            by default
-
-    - Implement a GUI.
-
-    - Check to see if archive folder already exists,
-        - give option to set location/name for new folder
-        - Use datafile/mod to script itself(?) to default to an existing folder
-
-        - Implement logging
-        - per run, eg performance/runtime, comics downloaded
-        - errors
 
 1.1.0 changes:
     - implemented relative path for virtualenv
@@ -55,19 +28,35 @@ Planned:
         (depreciating use of globals aids import functionality)
 
 1.2.0 changes:
-    implement json
+    - implement json
+
+1.2.1 changes:
+    - refactored thread setup to separate quick/full modes
+    - depreciate json title use in filename.
+        revert to using file names from json as filename to save image
+    - quick mode only downloads last 100 comics
+    - modified run_mode to eliminate try/except necessity,
+        added Q to quit option.
+    - made default parameter download_comics: run_mode=True
+        (for potential future use)
+    - removed unused latest_comic param from comic_json
+
+    - #TODO add press x to exit for if __name__ == '__main__' script
+
+    - #TODO: fix documentation all functions
+
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
 
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.1.3.dev1'
+__version__ = '1.2.1.dev1'
 
-import time
 import os
 import string
 import sys
+import time
 import threading
 
 import requests
@@ -88,21 +77,23 @@ def run_mode():
     Asks user to decide whether to run in quick/update or full mode.
     Returns True for full mode, False for quick/update
 
-    returns: int
+    Returns: int
     """
     while True:
-        try:
-            print('Please select mode:\n'
-                  'Enter 0 for Quick mode, or 1 for Full Mode')
-            run_mode_selection = input('Mode: ')
-            if int(run_mode_selection) == 0:
-                return False  # Quick mode
-                break
-            if int(run_mode_selection) == 1:
-                return True    # Full mode
-                break
-        except ValueError:
-            continue
+
+        print('Please select mode:\n'
+              'Enter 0 for Quick mode, or 1 for Full Mode.\n'
+              'Or enter Q to exit.')
+        run_mode_selection = input('Mode: ')
+
+        if run_mode_selection == '0':
+            return False  # Quick mode
+
+        elif run_mode_selection == '1':
+            return True    # Full mode
+
+        elif run_mode_selection.lower() == 'q':
+            return sys.exit()
 
 
 def download_image(session, comic_url, filename):
@@ -113,6 +104,8 @@ def download_image(session, comic_url, filename):
         session (class 'requests.sessions.Session'): the Session object.
         comic_url (str): String containing the image url.
         filename (str): String of the filename to save the image to.
+
+    Returns: None
     """
     # print(f'Downloading page http://xkcd.com/{url_number}...')
 
@@ -131,16 +124,29 @@ def download_image(session, comic_url, filename):
 
 
 def comic_json(comic_number):
-    try:
-        return requests.get('https://xkcd.com/'+str(comic_number)+'/info.0.json').json()
-    except:
-        print(comic_number)
+    """
+    """
+    return requests.get(
+            'https://xkcd.com/'+str(comic_number)+'/info.0.json').json()
+
+
+def set_comic_filename(comic):
+    """
+    Factored out to provide for future optional naming features.
+
+    Args:
+        comic (dict): json data from comic.
+
+    Returns: str
+    """
+    return f"{comic['num']} - {os.path.basename(comic['img'])}"
 
 
 def punct_stripper():
     return str.maketrans('', '', string.punctuation)
 
-def threaded_download(comic_start, comic_end, direction, run_mode):
+
+def threaded_download(comic_start, comic_end, run_mode, latest_comic):
     """
     Iterate over comic numbers, download comic page, find comic image, check if
     file with comic name already exists, if not, download comic image.
@@ -148,39 +154,40 @@ def threaded_download(comic_start, comic_end, direction, run_mode):
     Args:
         comic_start (int): the number of the first comic thread iterates over.
         comic_end (int): the number of the last comic thread iterates over.
-        direction (int): 1 or -1 iterating forwards or backwards based on mode.
-        run_mode (bool): the run mode - True for full, False for quick.
 
+        run_mode (bool): the run mode - True for full, False for quick.
+        latest_comic (int): latest comic number
     Returns: None
     """
+
+    if run_mode:
+        direction = 1
+    if not run_mode:
+        direction = -1
+
     with requests.Session() as session:
         for comic_number in range(comic_start, comic_end, direction):
             if comic_number == 404:
                 continue
+            if comic_number == latest_comic+1:
+                break
             try:
-                comic = comic_json(comic_number)  # get comic json data
-                title_cleaner = punct_stripper()
-                clean_title = comic['safe_title'].translate(title_cleaner)
-                if not clean_title.isalpha():
-                    clean_title = os.path.basename(comic['img'])
+                comic = comic_json(comic_number)
                 assert comic_number == comic['num']
-                base_url, file_type = os.path.splitext(comic['img'])
-                download_image(
-                        session,
-                        comic['img'],
-                        f"{comic['num']} - {clean_title}{file_type}")
+                filename = set_comic_filename(comic)
+                download_image(session, comic['img'], filename)
+
             except FileExistsError:
-                # print(f'--- Comic {url_number} already downloaded.---')
+#                print(f'--- Comic {comic_number} already downloaded.---')
                 if run_mode:  # Full mode
                     continue  # skip this comic
                 if not run_mode:
-                    # print(f'Finished updating archive, '
-                    #       f'comics {comic_start}-{comic_end}.')
+#                    print(f'Finished updating archive, '
+#                          f'comics {comic_start}-{comic_end+1}.')
                     break
 
 
-
-def download_comics(run_mode):
+def download_comics(run_mode=True):
     """
     Starts a number of threads based on the total number of comics.
     Executes download code inside each thread on 100 comics each.
@@ -202,27 +209,20 @@ def download_comics(run_mode):
 
     # Create and start the Thread objects.
     download_threads = []  # a list of all the Thread objects
-    for i in range(1, latest_comic-100, 100):
-        if run_mode:
-            download_thread = threading.Thread(
-                    target=threaded_download,
-                    args=(i, i+100, 1, run_mode))
-        if not run_mode:  # quick mode iterates back until pre-existing file
-            download_thread = threading.Thread(
-                    target=threaded_download,
-                    args=(i+100, i, -1, run_mode))
-        download_threads.append(download_thread)
-        download_thread.start()
     if run_mode:
-        download_thread = threading.Thread(
-                target=threaded_download,
-                args=(latest_comic-100, latest_comic+1, 1, run_mode))
-    if not run_mode:
-        download_thread = threading.Thread(
-                target=threaded_download,
-                args=(i+100, latest_comic-1, -1, run_mode))
-    download_threads.append(download_thread)
-    download_thread.start()
+        for i in range(1, latest_comic+1, 100):
+            download_thread = threading.Thread(
+                    target=threaded_download,
+                    args=(i, i+100, run_mode, latest_comic))
+            download_threads.append(download_thread)
+            download_thread.start()
+    if not run_mode:  # 10 threads of 10
+        for i in range(latest_comic-100, latest_comic, 10):
+            download_thread = threading.Thread(
+                    target=threaded_download,
+                    args=(i+10, i, run_mode, latest_comic))
+            download_threads.append(download_thread)
+            download_thread.start()
 
     # Wait for all threads to end.
     for download_thread in download_threads:
@@ -249,10 +249,9 @@ if __name__ == "__main__":
 
     # User input for full run or until finding already downloaded comic.
     print('There are two mode options:\n'
-          '\nQuick mode: Or "refresh mode", checked until it finds '
-          'a previously downloaded comic.\n'
-          ' Full mode: Checks for every comic, '
-          'downloads undownloaded comics.\n'
+          '\nQuick mode: Or "refresh mode", iterates backwards over latest '
+          '100 comics until it finds a previously downloaded comic.\n'
+          ' Full mode: Checks every comic, downloads undownloaded comics.\n'
           )
 
     run_mode = run_mode()  # Prompt user to set run_mode
