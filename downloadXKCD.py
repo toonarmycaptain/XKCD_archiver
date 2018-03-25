@@ -12,21 +12,6 @@ Full mode goes through every comic.
 Quick mode checked latest 100 comics, quits when it reaches the
     first comic that is already downloaded.
 
-
-1.1.0 changes:
-    - implemented relative path for virtualenv
-    - typos fixed: 'imput,' 'arguement,' 'backgorund' in docstring
-
-1.1.1 changes:
-    - refactored to run as import module/implemented if __name__ == "__main__":
-    - added function documentation
-    - print "Downloading image...." only in quick mode.
-
-1.1.2 changes:
-    - changed venv not activated text, prefixed with "Script running "
-    - explicitly pass variables
-        (depreciating use of globals aids import functionality)
-
 1.2.0 changes:
     - implement json
 
@@ -41,6 +26,9 @@ Quick mode checked latest 100 comics, quits when it reaches the
         (for potential future use)
     - removed unused latest_comic param from comic_json
 
+1.2.2 changes:
+    - changed if/if not logic at start of threaded_download to if/else
+
     - #TODO add press x to exit for if __name__ == '__main__' script
 
     - #TODO: fix documentation all functions
@@ -51,7 +39,7 @@ Derived from original project: https://automatetheboringstuff.com/chapter11/
 @author: david.antonini // toonarmycaptain
 """
 
-__version__ = '1.2.1.dev1'
+__version__ = '1.2.2.dev1'
 
 import os
 import string
@@ -90,7 +78,7 @@ def run_mode():
             return False  # Quick mode
 
         elif run_mode_selection == '1':
-            return True    # Full mode
+            return True  # Full mode
 
         elif run_mode_selection.lower() == 'q':
             return sys.exit()
@@ -110,7 +98,7 @@ def download_image(session, comic_url, filename):
     # print(f'Downloading page http://xkcd.com/{url_number}...')
 
     res = session.get(comic_url)
-#    res.raise_for_status()
+    # res.raise_for_status()
 
     with open(os.path.join('xkcd', filename), 'xb') as image_file:
         if not run_mode:
@@ -127,7 +115,7 @@ def comic_json(comic_number):
     """
     """
     return requests.get(
-            'https://xkcd.com/'+str(comic_number)+'/info.0.json').json()
+        'https://xkcd.com/' + str(comic_number) + '/info.0.json').json()
 
 
 def set_comic_filename(comic):
@@ -160,16 +148,16 @@ def threaded_download(comic_start, comic_end, run_mode, latest_comic):
     Returns: None
     """
 
-    if run_mode:
-        direction = 1
     if not run_mode:
         direction = -1
+    else:
+        direction = 1
 
     with requests.Session() as session:
         for comic_number in range(comic_start, comic_end, direction):
             if comic_number == 404:
                 continue
-            if comic_number == latest_comic+1:
+            if comic_number == latest_comic + 1:
                 break
             try:
                 comic = comic_json(comic_number)
@@ -178,12 +166,12 @@ def threaded_download(comic_start, comic_end, run_mode, latest_comic):
                 download_image(session, comic['img'], filename)
 
             except FileExistsError:
-#                print(f'--- Comic {comic_number} already downloaded.---')
+                # print(f'--- Comic {comic_number} already downloaded.---')
                 if run_mode:  # Full mode
                     continue  # skip this comic
                 if not run_mode:
-#                    print(f'Finished updating archive, '
-#                          f'comics {comic_start}-{comic_end+1}.')
+                    # print(f'Finished updating archive, '
+                    #       f'comics {comic_start}-{comic_end+1}.')
                     break
 
 
@@ -200,7 +188,7 @@ def download_comics(run_mode=True):
     """
     start = time.time()
 
-    os.makedirs('xkcd', exist_ok=True)   # store comics in ./xkcd
+    os.makedirs('xkcd', exist_ok=True)  # store comics in ./xkcd
 
     # Get latest comic number:
     url = 'https://xkcd.com/info.0.json'
@@ -210,17 +198,17 @@ def download_comics(run_mode=True):
     # Create and start the Thread objects.
     download_threads = []  # a list of all the Thread objects
     if run_mode:
-        for i in range(1, latest_comic+1, 100):
+        for i in range(1, latest_comic + 1, 100):
             download_thread = threading.Thread(
-                    target=threaded_download,
-                    args=(i, i+100, run_mode, latest_comic))
+                target=threaded_download,
+                args=(i, i + 100, run_mode, latest_comic))
             download_threads.append(download_thread)
             download_thread.start()
     if not run_mode:  # 10 threads of 10
-        for i in range(latest_comic-100, latest_comic, 10):
+        for i in range(latest_comic - 100, latest_comic, 10):
             download_thread = threading.Thread(
-                    target=threaded_download,
-                    args=(i+10, i, run_mode, latest_comic))
+                target=threaded_download,
+                args=(i + 10, i, run_mode, latest_comic))
             download_threads.append(download_thread)
             download_thread.start()
 
@@ -230,8 +218,8 @@ def download_comics(run_mode=True):
 
     timetotal = time.time() - start
     if timetotal > 60:
-        mins = timetotal//60
-        sec = timetotal-mins*60
+        mins = timetotal // 60
+        sec = timetotal - mins * 60
         print(f"Runtime: {mins:.0f} minutes, {sec:.2f} seconds")
     else:
         print(f"Runtime: {timetotal:.2f} seconds")
