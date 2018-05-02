@@ -23,8 +23,8 @@ downloadXKCD GUI - run downloadXKCD inside a GUI using Tkinter
     - refactored widget state change into separate function
     - unpassed quick/full button refs no longer stored in variables
 
->>>rearrange/format label/button placement
->>>run download code in a separate thread, but don't allow multiple button
+->rearrange/format label/button placement
+->run download code in a separate thread, but don't allow multiple button
 clicks to spawn multiple runs concurrently.
 
 Created on Wed Feb 28 11:23:42 2018
@@ -37,7 +37,7 @@ __version__ = '1.2.3+GUI'
 import sys
 import tkinter as tk
 
-import downloadXKCD
+from XKCD_archiver import downloadXKCD
 
 
 def venv_test(frame):

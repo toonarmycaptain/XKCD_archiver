@@ -7,7 +7,7 @@ Webscraper that downloads xkcd comics.
 Uses multithreading, checks if comic already downloaded for increased
     efficiency on rerun.
 
-Two run modess: Full and Quick
+Two run modes: Full and Quick
 Full mode goes through every comic.
 Quick mode checked latest 100 comics, quits when it reaches the
     first comic that is already downloaded.
@@ -247,3 +247,5 @@ if __name__ == "__main__":
     download_comics(run_mode)  # Download the comics
 
     print('Done.')
+
+    exit_text = input('Press return to exit.')
