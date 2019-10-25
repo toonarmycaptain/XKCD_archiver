@@ -34,7 +34,9 @@ Created on Wed Feb 28 11:23:42 2018
 @author: David Antonini // toonarmycaptain
 """
 
-__version__ = '1.2.3+GUI'
+from downloadXKCD import __version__
+
+__version__ += '+GUI'
 
 import sys
 import tkinter as tk
