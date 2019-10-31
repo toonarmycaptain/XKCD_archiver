@@ -14,7 +14,7 @@ downloadXKCD GUI - run downloadXKCD inside a GUI using Tkinter
 1.2.2 changes:
     - refactored venv
     - refactored window/GUI setup, button/widget creation into
-        separate functions to eliminate repitition
+        separate functions to eliminate repetition
     - fixed documentation
     - added button ghosting/disable functionality
 
