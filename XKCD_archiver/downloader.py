@@ -5,6 +5,11 @@ import threading
 
 import requests
 
+from typing import (Dict,
+                    List,
+                    Optional,
+                    )
+
 
 class Downloader:
     """
@@ -20,14 +25,15 @@ class Downloader:
         Internal list of threads.
 
     """
+
     def __init__(self,
-                 run_mode=True):
-        self.run_mode = run_mode
+                 run_mode: bool=True) -> None:
+        self.run_mode: bool = run_mode
 
-        self.latest_comic_number = None
-        self._download_threads = None
+        self.latest_comic_number: int
+        self._download_threads: List[threading.Thread]
 
-    def _download_image(self, session, comic_url, filename):
+    def _download_image(self, session: requests.sessions.Session, comic_url: str, filename: str) -> None:
         """
         Download the image file.
 
@@ -57,7 +63,7 @@ class Downloader:
         # TODO: Needs feature update where title text
         #       is in properties of downloaded image.
 
-    def _get_comic_json(self, session, comic_number):
+    def _get_comic_json(self, session: requests.sessions.Session, comic_number: int) -> Optional[Dict]:
         """
         """
         response = session.get(
@@ -67,7 +73,7 @@ class Downloader:
             return None
         return response.json()
 
-    def _set_comic_filename(self, comic):
+    def _set_comic_filename(self, comic: dict) -> str:
         """
         Factored out to provide for future optional naming features.
 
@@ -78,7 +84,7 @@ class Downloader:
         """
         return f"{comic['num']} - {os.path.basename(comic['img'])}"
 
-    def _threaded_download(self, comic_start, comic_end):
+    def _threaded_download(self, comic_start: int, comic_end: int) -> None:
         """
         Iterate over comic numbers, download comic page, find comic image, check if
         file with comic name already exists, if not, download comic image.
@@ -112,7 +118,7 @@ class Downloader:
                         #       f'comics {comic_start}-{comic_end+1}.')
                         break
 
-    def _download_comic(self, session, comic_number):
+    def _download_comic(self, session: requests.sessions.Session, comic_number: int) -> None:
         comic = self._get_comic_json(session, comic_number)
         if comic:
             assert comic_number == comic['num']
@@ -120,12 +126,12 @@ class Downloader:
             if not os.path.exists(filename):
                 self._download_image(session, comic['img'], filename)
 
-    def _get_latest_comic(self):
+    def _get_latest_comic(self) -> int:
         url = 'https://xkcd.com/info.0.json'
         latest_data = requests.get(url).json()
         return latest_data['num']
 
-    def download_comics(self, set_run_mode=None):
+    def download_comics(self, set_run_mode: Optional[bool] = None) -> None:
         """
         Starts a number of threads based on the total number of comics.
         Executes download code inside each thread on 100 comics each.
@@ -159,13 +165,13 @@ class Downloader:
         for download_thread in self._download_threads:
             download_thread.join()
 
-    def _start_threads(self, first_comic, last_comic, step):
+    def _start_threads(self, first_comic: int, last_comic: int, step: int) -> None:
         for i in range(first_comic, last_comic + 1, step):
             download_thread = self._setup_download_thread(i, i + step)
             self._download_threads.append(download_thread)
             download_thread.start()
 
-    def _setup_download_thread(self, first_comic, last_comic):
+    def _setup_download_thread(self, first_comic: int, last_comic: int) -> threading.Thread:
         download_thread = threading.Thread(target=self._threaded_download,
                                            args=(first_comic, last_comic)
                                            )
