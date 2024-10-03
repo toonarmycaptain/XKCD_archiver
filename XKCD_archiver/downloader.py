@@ -82,7 +82,7 @@ class Downloader:
 
         Returns: str
         """
-        return f"{comic['num']} - {os.path.basename(comic['img'])}"
+        return f"{comic['num']}-{Path(comic['img']).name}"
 
     def _threaded_download(self, comic_start: int, comic_end: int) -> None:
         """
