@@ -1,6 +1,6 @@
 """ Downloader class """
 
-import os
+from pathlib import Path
 import threading
 
 import requests
@@ -33,7 +33,7 @@ class Downloader:
         self.latest_comic_number: int
         self._download_threads: List[threading.Thread]
 
-    def _download_image(self, session: requests.sessions.Session, comic_url: str, filename: str) -> None:
+    def _download_image(self, session: requests.sessions.Session, comic_url: str, filename: Path) -> None:
         """
         Download the image file.
 
@@ -53,7 +53,7 @@ class Downloader:
             # Is there a better way to handle this, in case there are redirects etc?
             return None
 
-        with open(os.path.join('xkcd', filename), 'xb') as image_file:
+        with open(Path('xkcd', filename), 'xb') as image_file:
             if not self.run_mode:
                 print(f'Downloading image {comic_url}...')
 
@@ -73,7 +73,7 @@ class Downloader:
             return None
         return response.json()
 
-    def _set_comic_filename(self, comic: dict) -> str:
+    def _set_comic_filename(self, comic: dict) -> Path:
         """
         Factored out to provide for future optional naming features.
 
@@ -82,7 +82,7 @@ class Downloader:
 
         Returns: str
         """
-        return f"{comic['num']}-{Path(comic['img']).name}"
+        return Path(f"{comic['num']}-{Path(comic['img']).name}")
 
     def _threaded_download(self, comic_start: int, comic_end: int) -> None:
         """
@@ -123,7 +123,7 @@ class Downloader:
         if comic:
             assert comic_number == comic['num']
             filename = self._set_comic_filename(comic)
-            if not os.path.exists(filename):
+            if not filename.exists():
                 self._download_image(session, comic['img'], filename)
 
     def _get_latest_comic(self) -> int:
@@ -148,7 +148,7 @@ class Downloader:
             # Use run mode set in __init__
             run_mode = self.run_mode
 
-        os.makedirs('xkcd', exist_ok=True)  # store comics in ./xkcd
+        Path('xkcd').mkdir(exist_ok=True)  # store comics in ./xkcd
 
         # Get latest comic number:
         self.latest_comic_number = self._get_latest_comic()

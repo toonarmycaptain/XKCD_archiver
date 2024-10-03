@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - downloader.py - `Downloader` class.
 - Feature not downloading the image file if the filename already exists.
 - Batch file to run via shortcut on Windows, second batch file to ensure dependencies are installed before run.
+- Implement Pathlib
 ### Changed
 - Moved informal changelog to CHANGELOG.md, reformat, from now on use to semver.
 - Refactor core algorithm into class Downloader.
