@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-xkcd-archiver = "XKCD_archiver.cli:main"
+xkcd-archiver = "XKCD_archiver.downloadXKCD:cli_run"
 
 [build-system]
 requires = ["hatchling"]
