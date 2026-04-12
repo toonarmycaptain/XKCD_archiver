@@ -1,5 +1,12 @@
 """Allow running as `python -m XKCD_archiver`."""
 
-from XKCD_archiver.downloadXKCD import cli_run
+import sys
 
-cli_run()
+if "--tui" in sys.argv:
+    from XKCD_archiver.tui import main
+
+    main()
+else:
+    from XKCD_archiver.downloadXKCD import cli_run
+
+    cli_run()

@@ -12,11 +12,21 @@ uv sync
 
 ## Usage
 
+### CLI
 ```bash
 uv run xkcd-archiver
 # or
 uv run python -m XKCD_archiver
 ```
+
+### TUI
+```bash
+uv run xkcd-tui
+# or
+uv run python -m XKCD_archiver --tui
+```
+
+The TUI provides a progress bar, live download log, and configurable worker count.
 
 ## Run modes
 
