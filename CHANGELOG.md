@@ -20,9 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require Python 3.13+
 
 ### Added
+- Textual TUI (`xkcd-tui`) with progress bar, log, mode/worker selection
 - Test suite for downloader and CLI modules
 - `.pre-commit-config.yaml`
 - `.github/workflows/ci.yml`
+
+### Fixed
+- Image download failures (e.g. comics 1608, 1668) now correctly reported as skipped instead of downloaded
 
 ### Removed
 - `setup.py` (replaced by `pyproject.toml`)
