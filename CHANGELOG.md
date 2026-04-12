@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-04-12
+### Changed
+- Replace raw `threading.Thread` with `ThreadPoolExecutor` and per-thread sessions
+- Mode selection uses `"full"`/`"quick"` strings instead of booleans
+- Add `DownloadProgress` dataclass and progress callback support
+- Add retry with exponential backoff on request failures
+- Add request timeouts
+- Quick mode correctly handles archives with fewer than 100 comics
+- Replace `setup.py` and `requirements.txt` with `pyproject.toml` and `uv`
+- Add ruff linting and formatting
+- Add pre-commit hooks
+- Add GitHub Actions CI (lint + test on Python 3.13, 3.14, 3.14t)
+- Add `__main__.py` and `xkcd-archiver` console entry point
+- Require Python 3.13+
+
+### Added
+- Test suite for downloader and CLI modules
+- `.pre-commit-config.yaml`
+- `.github/workflows/ci.yml`
+
+### Removed
+- `setup.py` (replaced by `pyproject.toml`)
+- `requirements.txt` (replaced by `uv.lock`)
+- `.pyup.yml` and `.whitesource` (stale configs)
+
 ### Unreleased [2.0.0] - 2019-10-24
 ### Added
 - README.md

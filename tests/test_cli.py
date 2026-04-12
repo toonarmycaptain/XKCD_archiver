@@ -35,11 +35,11 @@ class TestIsVenv:
 class TestRunModeSelector:
     def test_full_mode(self, monkeypatch):
         monkeypatch.setattr("builtins.input", lambda _: "1")
-        assert run_mode_selector() is True
+        assert run_mode_selector() == "full"
 
     def test_quick_mode(self, monkeypatch):
         monkeypatch.setattr("builtins.input", lambda _: "0")
-        assert run_mode_selector() is False
+        assert run_mode_selector() == "quick"
 
     def test_quit(self, monkeypatch):
         monkeypatch.setattr("builtins.input", lambda _: "q")
@@ -57,8 +57,8 @@ class TestTimedRun:
         mock_downloader = MagicMock()
         with patch("XKCD_archiver.downloadXKCD.time") as mock_time:
             mock_time.time.side_effect = [0.0, 5.5]
-            timed_run(mock_downloader)
-        mock_downloader.download_comics.assert_called_once()
+            timed_run(mock_downloader, "full")
+        mock_downloader.download_comics.assert_called_once_with(mode="full")
         output = capsys.readouterr().out
         assert "5.50 seconds" in output
 
@@ -66,7 +66,7 @@ class TestTimedRun:
         mock_downloader = MagicMock()
         with patch("XKCD_archiver.downloadXKCD.time") as mock_time:
             mock_time.time.side_effect = [0.0, 125.0]
-            timed_run(mock_downloader)
+            timed_run(mock_downloader, "quick")
         output = capsys.readouterr().out
         assert "2 minutes" in output
 

@@ -1,17 +1,37 @@
-XKCD_archiver - Downloads every single XKCD comic.
+# XKCD_archiver
 
-Webscraper that downloads xkcd comics.
-Uses multithreading, checks if comic already downloaded for increased
-    efficiency on rerun.
+Downloads every single XKCD comic.
 
-Two run modes: Full and Quick
-Full mode goes through every comic.
-Quick mode checked latest 100 comics, quits when it reaches the
-    first comic that is already downloaded.
+Uses `ThreadPoolExecutor` with per-thread connection pooling for fast concurrent downloads. Checks if each comic already exists before downloading.
 
-Basic GUI included.     
-Windows .bat file included, which ensures dependencies are installed before running.    
+## Installation
 
-This project is semi-abandoned. It is without tests, and I have no plans to work on tests or improvements at this time.
+```bash
+uv sync
+```
+
+## Usage
+
+```bash
+uv run xkcd-archiver
+# or
+uv run python -m XKCD_archiver
+```
+
+## Run modes
+
+- **Full mode**: Checks every comic, downloads any missing.
+- **Quick mode**: Checks the latest 100 comics, downloads any missing.
+
+## Development
+
+```bash
+uv sync                        # install deps
+uv run pytest                  # run tests
+uv run ruff check .            # lint
+uv run ruff format --check .   # format check
+```
+
+Requires Python 3.13+.
 
 Derived from original project: https://automatetheboringstuff.com/chapter11/
