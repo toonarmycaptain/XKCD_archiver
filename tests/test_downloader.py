@@ -96,7 +96,8 @@ class TestDownloadImage:
         d = Downloader(output_dir=tmp_path)
         session = d._get_session()
         filepath = tmp_path / "1-test.png"
-        d._download_image(session, "https://imgs.xkcd.com/comics/test.png", filepath)
+        result = d._download_image(session, "https://imgs.xkcd.com/comics/test.png", filepath)
+        assert result is True
         assert filepath.exists()
         assert filepath.read_bytes() == FAKE_IMAGE
 
@@ -106,7 +107,8 @@ class TestDownloadImage:
         d = Downloader(output_dir=tmp_path)
         session = d._get_session()
         filepath = tmp_path / "1-missing.png"
-        d._download_image(session, "https://imgs.xkcd.com/comics/missing.png", filepath)
+        result = d._download_image(session, "https://imgs.xkcd.com/comics/missing.png", filepath)
+        assert result is False
         assert not filepath.exists()
 
 

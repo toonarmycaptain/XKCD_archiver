@@ -81,14 +81,16 @@ class Downloader:
     def _set_comic_filename(self, comic: dict) -> Path:
         return Path(f"{comic['num']}-{Path(comic['img']).name}")
 
-    def _download_image(self, session: requests.Session, comic_url: str, filepath: Path) -> None:
+    def _download_image(self, session: requests.Session, comic_url: str, filepath: Path) -> bool:
+        """Download image. Returns True if saved, False if image unavailable."""
         response = session.get(comic_url, timeout=self.TIMEOUT)
         if response.status_code != 200:
-            return
+            return False
 
         with open(filepath, "xb") as image_file:
             for chunk in response.iter_content(100_000):
                 image_file.write(chunk)
+        return True
 
     def _download_one(self, comic_number: int, total: int) -> DownloadProgress:
         session = self._get_session()
@@ -112,8 +114,9 @@ class Downloader:
                 if filepath.exists():
                     return DownloadProgress(comic_number, total, "skipped")
 
-                self._download_image(session, comic["img"], filepath)
-                return DownloadProgress(comic_number, total, "downloaded")
+                if self._download_image(session, comic["img"], filepath):
+                    return DownloadProgress(comic_number, total, "downloaded")
+                return DownloadProgress(comic_number, total, "skipped", "image unavailable")
 
             except FileExistsError:
                 return DownloadProgress(comic_number, total, "skipped")
