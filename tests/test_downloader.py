@@ -20,7 +20,7 @@ def _register_latest(num):
 class TestDownloaderInit:
     def test_defaults(self):
         d = Downloader()
-        assert d.max_workers == 20
+        assert d.max_workers == 10
         assert d.output_dir == Path("xkcd")
         assert d.max_retries == 3
         assert d.progress_callback is None

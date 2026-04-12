@@ -44,7 +44,7 @@ class Downloader:
 
     def __init__(
         self,
-        max_workers: int = 20,
+        max_workers: int = 10,
         output_dir: Path = Path("xkcd"),
         max_retries: int = 3,
         progress_callback: callable = None,
