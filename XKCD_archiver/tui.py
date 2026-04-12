@@ -122,9 +122,13 @@ class XKCDArchiverApp(App):
 
         self.call_from_thread(self._set_total, total)
 
-        downloader.download_comics(mode=mode)
+        import time
 
-        self.call_from_thread(self._download_complete)
+        start = time.time()
+        downloader.download_comics(mode=mode)
+        elapsed = time.time() - start
+
+        self.call_from_thread(self._download_complete, elapsed)
 
     def _set_total(self, total: int) -> None:
         self._total = total
@@ -155,10 +159,19 @@ class XKCDArchiverApp(App):
             f"Failed: {self._failed}  Progress: {done}/{self._total}"
         )
 
-    def _download_complete(self) -> None:
+    def _download_complete(self, elapsed: float) -> None:
         log = self.query_one("#log", RichLog)
         log.write("")
-        log.write(f"[bold]Done![/] Downloaded: {self._downloaded}, Skipped: {self._skipped}, Failed: {self._failed}")
+        if elapsed > 60:
+            mins = elapsed // 60
+            sec = elapsed - mins * 60
+            runtime = f"{mins:.0f}m {sec:.1f}s"
+        else:
+            runtime = f"{elapsed:.1f}s"
+        log.write(
+            f"[bold]Done![/] Downloaded: {self._downloaded}, Skipped: {self._skipped}, "
+            f"Failed: {self._failed} in {runtime}"
+        )
 
         start_btn = self.query_one("#start-btn", Button)
         start_btn.disabled = False
