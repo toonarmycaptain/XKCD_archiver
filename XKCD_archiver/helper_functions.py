@@ -2,8 +2,6 @@
 
 import string
 
-from typing import Dict, Optional
 
-
-def punct_stripper() -> Dict[int, Optional[int]]:
-    return str.maketrans('', '', string.punctuation)
+def punct_stripper() -> dict[int, int | None]:
+    return str.maketrans("", "", string.punctuation)

@@ -1,14 +1,9 @@
-""" Downloader class """
+"""Downloader class"""
 
-from pathlib import Path
 import threading
+from pathlib import Path
 
 import requests
-
-from typing import (Dict,
-                    List,
-                    Optional,
-                    )
 
 
 class Downloader:
@@ -26,12 +21,11 @@ class Downloader:
 
     """
 
-    def __init__(self,
-                 run_mode: bool=True) -> None:
+    def __init__(self, run_mode: bool = True) -> None:
         self.run_mode: bool = run_mode
 
         self.latest_comic_number: int
-        self._download_threads: List[threading.Thread]
+        self._download_threads: list[threading.Thread]
 
     def _download_image(self, session: requests.sessions.Session, comic_url: str, filename: Path) -> None:
         """
@@ -53,9 +47,9 @@ class Downloader:
             # Is there a better way to handle this, in case there are redirects etc?
             return None
 
-        with open(Path('xkcd', filename), 'xb') as image_file:
+        with open(Path("xkcd", filename), "xb") as image_file:
             if not self.run_mode:
-                print(f'Downloading image {comic_url}...')
+                print(f"Downloading image {comic_url}...")
 
             for chunk in response.iter_content(100000):
                 image_file.write(chunk)
@@ -63,11 +57,9 @@ class Downloader:
         # TODO: Needs feature update where title text
         #       is in properties of downloaded image.
 
-    def _get_comic_json(self, session: requests.sessions.Session, comic_number: int) -> Optional[Dict]:
-        """
-        """
-        response = session.get(
-            'https://xkcd.com/' + str(comic_number) + '/info.0.json')
+    def _get_comic_json(self, session: requests.sessions.Session, comic_number: int) -> dict | None:
+        """ """
+        response = session.get("https://xkcd.com/" + str(comic_number) + "/info.0.json")
         if response.status_code != 200:
             # handle
             return None
@@ -121,17 +113,18 @@ class Downloader:
     def _download_comic(self, session: requests.sessions.Session, comic_number: int) -> None:
         comic = self._get_comic_json(session, comic_number)
         if comic:
-            assert comic_number == comic['num']
+            if comic_number != comic["num"]:
+                raise ValueError(f"Requested comic {comic_number} but API returned comic {comic['num']}")
             filename = self._set_comic_filename(comic)
             if not filename.exists():
-                self._download_image(session, comic['img'], filename)
+                self._download_image(session, comic["img"], filename)
 
     def _get_latest_comic(self) -> int:
-        url = 'https://xkcd.com/info.0.json'
+        url = "https://xkcd.com/info.0.json"
         latest_data = requests.get(url).json()
-        return latest_data['num']
+        return latest_data["num"]
 
-    def download_comics(self, set_run_mode: Optional[bool] = None) -> None:
+    def download_comics(self, set_run_mode: bool | None = None) -> None:
         """
         Starts a number of threads based on the total number of comics.
         Executes download code inside each thread on 100 comics each.
@@ -142,13 +135,9 @@ class Downloader:
 
         returns: None
         """
-        if set_run_mode is not None:
-            run_mode = set_run_mode
-        else:
-            # Use run mode set in __init__
-            run_mode = self.run_mode
+        run_mode = set_run_mode if set_run_mode is not None else self.run_mode
 
-        Path('xkcd').mkdir(exist_ok=True)  # store comics in ./xkcd
+        Path("xkcd").mkdir(exist_ok=True)  # store comics in ./xkcd
 
         # Get latest comic number:
         self.latest_comic_number = self._get_latest_comic()
@@ -172,8 +161,6 @@ class Downloader:
             download_thread.start()
 
     def _setup_download_thread(self, first_comic: int, last_comic: int) -> threading.Thread:
-        download_thread = threading.Thread(target=self._threaded_download,
-                                           args=(first_comic, last_comic)
-                                           )
+        download_thread = threading.Thread(target=self._threaded_download, args=(first_comic, last_comic))
 
         return download_thread
