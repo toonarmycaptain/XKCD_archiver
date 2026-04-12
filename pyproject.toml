@@ -10,10 +10,12 @@ authors = [
 ]
 dependencies = [
     "requests>=2.32",
+    "textual>=0.50",
 ]
 
 [project.scripts]
 xkcd-archiver = "XKCD_archiver.downloadXKCD:cli_run"
+xkcd-tui = "XKCD_archiver.tui:main"
 
 [build-system]
 requires = ["hatchling"]
