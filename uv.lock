@@ -450,6 +450,24 @@ wheels = [
 ]
 
 [[package]]
+name = "textual-image"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/e7/c82ea0604874b6d51d5717a0911061ae5810e36dad2e4d2b11fa7d54cdaa/textual_image-0.12.0.tar.gz", hash = "sha256:fdd0b5ff9c8a99740bc360a99ce014d563fa97d07a5b49b472470809f57c0a74", size = 116403, upload-time = "2026-04-12T17:37:44.696Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/67/2c/38ac586a3834a3bd8cbcf0c8ea1ae23bf68b9cc13b96a67f47a825479dd3/textual_image-0.12.0-py3-none-any.whl", hash = "sha256:0b13f62fe6a29f4ed6dfd641f2779ffe92dde41f16163fa1de69158477aa50aa", size = 115626, upload-time = "2026-04-12T17:37:41.238Z" },
+]
+
+[package.optional-dependencies]
+textual = [
+    { name = "textual" },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -493,12 +511,13 @@ wheels = [
 
 [[package]]
 name = "xkcd-archiver"
-version = "3.0.0"
+version = "3.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "pillow" },
     { name = "requests" },
     { name = "textual" },
+    { name = "textual-image", extra = ["textual"] },
 ]
 
 [package.dev-dependencies]
@@ -514,6 +533,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.0" },
     { name = "requests", specifier = ">=2.32" },
     { name = "textual", specifier = ">=0.50" },
+    { name = "textual-image", extras = ["textual"], specifier = ">=0.2" },
 ]
 
 [package.metadata.requires-dev]

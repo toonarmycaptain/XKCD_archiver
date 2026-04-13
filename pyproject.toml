@@ -12,6 +12,7 @@ dependencies = [
     "requests>=2.32",
     "textual>=0.50",
     "Pillow>=10.0",
+    "textual-image[textual]>=0.2",
 ]
 
 [project.scripts]
