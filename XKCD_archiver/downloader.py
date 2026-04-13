@@ -9,6 +9,8 @@ from time import sleep
 import requests
 from requests.adapters import HTTPAdapter
 
+from XKCD_archiver.metadata import embed_metadata
+
 
 @dataclass
 class DownloadProgress:
@@ -115,6 +117,7 @@ class Downloader:
                     return DownloadProgress(comic_number, total, "skipped")
 
                 if self._download_image(session, comic["img"], filepath):
+                    embed_metadata(filepath, comic)
                     return DownloadProgress(comic_number, total, "downloaded")
                 return DownloadProgress(comic_number, total, "skipped", "image unavailable")
 
