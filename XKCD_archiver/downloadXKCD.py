@@ -9,7 +9,7 @@ from pathlib import Path
 
 from XKCD_archiver.downloader import Downloader
 
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 
 
 def is_venv() -> bool:
