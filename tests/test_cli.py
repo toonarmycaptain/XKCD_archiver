@@ -1,6 +1,7 @@
 """Tests for the CLI module."""
 
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,7 @@ import pytest
 from XKCD_archiver.downloadXKCD import (
     env_indicator,
     is_venv,
+    parse_args,
     run_mode_selector,
     script_tagline,
     timed_run,
@@ -76,6 +78,40 @@ class TestScriptTagline:
         script_tagline()
         output = capsys.readouterr().out
         assert "xkcd.com" in output
+
+
+class TestParseArgs:
+    def test_defaults(self):
+        args = parse_args([])
+        assert args.mode is None
+        assert args.output == Path("xkcd")
+        assert args.workers == 10
+
+    def test_mode_quick(self):
+        args = parse_args(["--mode", "quick"])
+        assert args.mode == "quick"
+
+    def test_mode_full(self):
+        args = parse_args(["-m", "full"])
+        assert args.mode == "full"
+
+    def test_output(self, tmp_path):
+        args = parse_args(["--output", str(tmp_path / "comics")])
+        assert args.output == tmp_path / "comics"
+
+    def test_output_short(self, tmp_path):
+        args = parse_args(["-o", str(tmp_path / "comics")])
+        assert args.output == tmp_path / "comics"
+
+    def test_workers(self):
+        args = parse_args(["--workers", "5"])
+        assert args.workers == 5
+
+    def test_all_flags(self, tmp_path):
+        args = parse_args(["-m", "quick", "-o", str(tmp_path), "-w", "20"])
+        assert args.mode == "quick"
+        assert args.output == tmp_path
+        assert args.workers == 20
 
 
 class TestEnvIndicator:

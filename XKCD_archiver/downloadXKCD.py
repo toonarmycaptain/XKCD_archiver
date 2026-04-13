@@ -2,8 +2,10 @@
 downloadXKCD.py - Downloads every single XKCD comic.
 """
 
+import argparse
 import sys
 import time
+from pathlib import Path
 
 from XKCD_archiver.downloader import Downloader
 
@@ -75,14 +77,23 @@ def select_mode() -> str:
     return run_mode_selector()
 
 
-def cli_run() -> None:
-    script_tagline()
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Downloads every single XKCD comic.")
+    parser.add_argument("--mode", "-m", choices=["quick", "full"], help="Download mode (interactive if omitted)")
+    parser.add_argument("--output", "-o", type=Path, default=Path("xkcd"), help="Output directory (default: xkcd)")
+    parser.add_argument("--workers", "-w", type=int, default=10, help="Number of concurrent workers (default: 10)")
+    return parser.parse_args(argv)
 
+
+def cli_run(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+
+    script_tagline()
     env_indicator()
 
-    mode = select_mode()
+    mode = args.mode if args.mode else select_mode()
 
-    downloader = Downloader()
+    downloader = Downloader(output_dir=args.output, max_workers=args.workers)
 
     timed_run(downloader, mode)
 
