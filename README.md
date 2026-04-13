@@ -14,9 +14,9 @@ uv sync
 
 ### CLI
 ```bash
-uv run xkcd-archiver
-# or
-uv run python -m XKCD_archiver
+uv run xkcd-archiver                              # interactive mode selector
+uv run xkcd-archiver --mode full                   # skip interactive prompt
+uv run xkcd-archiver --mode quick --output ~/comics --workers 20
 ```
 
 ### TUI
@@ -26,7 +26,13 @@ uv run xkcd-tui
 uv run python -m XKCD_archiver --tui
 ```
 
-The TUI provides a progress bar, live download log, and configurable worker count.
+The TUI provides a progress bar, live download log, configurable worker count, output path, and a cancel button.
+
+## Features
+
+- Alt text, title, source URL, and date embedded into downloaded images
+- Configurable output directory (`--output` / `-o`)
+- Configurable concurrency (`--workers` / `-w`)
 
 ## Run modes
 

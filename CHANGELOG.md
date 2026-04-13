@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-12
+### Added
+- Embed alt text, title, source URL, and date into downloaded images (PNG tEXt, JPEG EXIF, GIF comment)
+- Configurable output directory via CLI `--output`/`-o` flag and TUI input field
+- CLI flags: `--mode`/`-m`, `--workers`/`-w` via argparse
+- Cancel button in TUI to stop downloads mid-run
+- Integration tests against real xkcd.com API
+
+### Fixed
+- Image download failures (e.g. comics 1608, 1668) now correctly reported as skipped
+
 ## [3.0.0] - 2026-04-12
 ### Changed
 - Replace raw `threading.Thread` with `ThreadPoolExecutor` and per-thread sessions
