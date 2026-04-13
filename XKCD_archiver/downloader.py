@@ -56,6 +56,11 @@ class Downloader:
         self.max_retries = max_retries
         self.progress_callback = progress_callback
         self._thread_local = threading.local()
+        self._cancel_event = threading.Event()
+
+    def cancel(self) -> None:
+        """Signal all workers to stop."""
+        self._cancel_event.set()
 
     def _get_session(self) -> requests.Session:
         """Get or create a per-thread requests.Session."""
@@ -95,6 +100,8 @@ class Downloader:
         return True
 
     def _download_one(self, comic_number: int, total: int) -> DownloadProgress:
+        if self._cancel_event.is_set():
+            return DownloadProgress(comic_number, total, "skipped", "cancelled")
         session = self._get_session()
         for attempt in range(self.max_retries):
             try:
@@ -142,6 +149,7 @@ class Downloader:
         Returns:
             List of DownloadProgress results for each comic processed.
         """
+        self._cancel_event.clear()
         self.output_dir.mkdir(exist_ok=True)
 
         session = self._get_session()
@@ -156,6 +164,10 @@ class Downloader:
             futures = {pool.submit(self._download_one, num, total): num for num in comic_numbers}
 
             for future in as_completed(futures):
+                if self._cancel_event.is_set():
+                    for f in futures:
+                        f.cancel()
+                    break
                 progress = future.result()
                 results.append(progress)
                 self._report(progress.comic_number, progress.total, progress.status, progress.error)
