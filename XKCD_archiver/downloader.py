@@ -9,6 +9,7 @@ from time import sleep
 import requests
 from requests.adapters import HTTPAdapter
 
+from XKCD_archiver.cache import ComicCache
 from XKCD_archiver.metadata import build_png_metadata_chunks, embed_metadata
 
 
@@ -57,6 +58,7 @@ class Downloader:
         self.progress_callback = progress_callback
         self._thread_local = threading.local()
         self._cancel_event = threading.Event()
+        self._cache = ComicCache(output_dir)
 
     def cancel(self) -> None:
         """Signal all workers to stop."""
@@ -141,6 +143,7 @@ class Downloader:
                 if self._download_image(session, comic["img"], filepath, png_metadata=png_meta):
                     if not png_meta:
                         embed_metadata(filepath, comic)  # JPEG/GIF only
+                    self._cache.store(comic, filename.name)
                     return DownloadProgress(comic_number, total, "downloaded")
                 return DownloadProgress(comic_number, total, "skipped", "image unavailable")
 
