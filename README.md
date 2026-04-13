@@ -26,13 +26,18 @@ uv run xkcd-tui
 uv run python -m XKCD_archiver --tui
 ```
 
-The TUI provides a progress bar, live download log, configurable worker count, output path, and a cancel button.
+The TUI has two tabs:
+- **Download**: progress bar, live download log, configurable workers/output, cancel button
+- **Viewer**: browse downloaded comics with inline image preview, metadata, and search
 
 ## Features
 
 - Alt text, title, source URL, and date embedded into downloaded images
 - Configurable output directory (`--output` / `-o`)
 - Configurable concurrency (`--workers` / `-w`)
+- Comic viewer with search across titles, alt text, and transcripts
+- SQLite metadata cache for fast browsing
+- Press `o` in viewer to open comic in system image viewer
 
 ## Run modes
 
