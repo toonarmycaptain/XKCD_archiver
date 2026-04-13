@@ -54,7 +54,7 @@ class XKCDArchiverApp(App):
         self._failed = 0
         self._total = 0
         self._downloader: Downloader | None = None
-        self._running = False
+        self._downloading = False  # was named _running but that collided with Textual internal var.
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -77,7 +77,7 @@ class XKCDArchiverApp(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "start-btn":
-            if self._running:
+            if self._downloading:
                 self._cancel_download()
             else:
                 self._start_download()
@@ -94,7 +94,7 @@ class XKCDArchiverApp(App):
         except ValueError:
             workers = 10
 
-        self._running = True
+        self._downloading = True
         start_btn.label = "Cancel"
         start_btn.variant = "error"
 
@@ -187,7 +187,7 @@ class XKCDArchiverApp(App):
             f"{status} Downloaded: {self._downloaded}, Skipped: {self._skipped}, Failed: {self._failed} in {runtime}"
         )
 
-        self._running = False
+        self._downloading = False
         self._downloader = None
         start_btn = self.query_one("#start-btn", Button)
         start_btn.label = "Start"
