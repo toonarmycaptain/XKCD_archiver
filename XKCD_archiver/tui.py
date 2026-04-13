@@ -1,6 +1,7 @@
 """Textual TUI for XKCD archiver."""
 
 import time
+from pathlib import Path
 
 from textual import work
 from textual.app import App, ComposeResult
@@ -24,6 +25,9 @@ class XKCDArchiverApp(App):
     }
     #workers-input {
         width: 12;
+    }
+    #output-input {
+        width: 30;
     }
     #start-btn {
         margin-left: 2;
@@ -68,6 +72,8 @@ class XKCDArchiverApp(App):
             )
             yield Label(" Workers: ")
             yield Input(value="10", id="workers-input", type="integer", max_length=3)
+            yield Label(" Output: ")
+            yield Input(value="xkcd", id="output-input")
             yield Button("Start", id="start-btn", variant="primary")
         with Vertical(id="progress-area"):
             yield ProgressBar(id="progress", total=100, show_eta=True)
@@ -85,9 +91,11 @@ class XKCDArchiverApp(App):
     def _start_download(self) -> None:
         mode_select = self.query_one("#mode-select", Select)
         workers_input = self.query_one("#workers-input", Input)
+        output_input = self.query_one("#output-input", Input)
         start_btn = self.query_one("#start-btn", Button)
 
         mode = str(mode_select.value)
+        output_dir = Path(output_input.value.strip() or "xkcd")
         try:
             workers = int(workers_input.value)
             workers = max(1, min(workers, 50))
@@ -105,9 +113,9 @@ class XKCDArchiverApp(App):
 
         log = self.query_one("#log", RichLog)
         log.clear()
-        log.write(f"Starting {mode} mode with {workers} workers...")
+        log.write(f"Starting {mode} mode with {workers} workers, output: {output_dir}")
 
-        self._run_download(mode, workers)
+        self._run_download(mode, workers, output_dir)
 
     def _cancel_download(self) -> None:
         if self._downloader:
@@ -116,12 +124,13 @@ class XKCDArchiverApp(App):
         log.write("[yellow]Cancelling...[/]")
 
     @work(thread=True)
-    def _run_download(self, mode: str, workers: int) -> None:
+    def _run_download(self, mode: str, workers: int, output_dir: Path) -> None:
         def on_progress(p: DownloadProgress) -> None:
             self.call_from_thread(self._update_progress, p)
 
         self._downloader = Downloader(
             max_workers=workers,
+            output_dir=output_dir,
             progress_callback=on_progress,
         )
 
