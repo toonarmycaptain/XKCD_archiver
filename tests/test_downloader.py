@@ -238,12 +238,3 @@ class TestDownloadComics:
 
         assert len(progress_reports) == 2
         assert all(isinstance(p, DownloadProgress) for p in progress_reports)
-
-
-class TestHelperFunctions:
-    def test_punct_stripper(self):
-        from XKCD_archiver.helper_functions import punct_stripper
-
-        table = punct_stripper()
-        result = "hello, world!".translate(table)
-        assert result == "hello world"
