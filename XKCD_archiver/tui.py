@@ -291,12 +291,15 @@ class XKCDArchiverApp(App):
         if hasattr(self, "_poll_timer"):
             self._poll_timer.stop()
 
+    def _get_cache(self) -> ComicCache:
+        output_input = self.query_one("#output-input", Input)
+        comic_dir = Path(output_input.value.strip() or "xkcd")
+        return ComicCache(comic_dir)
+
     def _poll_progress(self) -> None:
         if not self._downloader:
             return
-        output_input = self.query_one("#output-input", Input)
-        comic_dir = Path(output_input.value.strip() or "xkcd")
-        cache = ComicCache(comic_dir)
+        cache = self._get_cache()
         done = cache.count()
 
         self.query_one("#progress", ProgressBar).update(total=self._total, progress=done)
@@ -310,10 +313,7 @@ class XKCDArchiverApp(App):
                 log.write(f"[green]Downloaded[/] #{c['num']}: {c['title']}")
 
     def _download_complete(self, elapsed: float) -> None:
-        # Final progress update
-        output_input = self.query_one("#output-input", Input)
-        comic_dir = Path(output_input.value.strip() or "xkcd")
-        cache = ComicCache(comic_dir)
+        cache = self._get_cache()
         done = cache.count()
         self.query_one("#progress", ProgressBar).update(total=self._total, progress=self._total)
         self.query_one("#stats", Label).update(f"Cached: {done}/{self._total}")

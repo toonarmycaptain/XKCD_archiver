@@ -72,15 +72,7 @@ def _embed_png(filepath: Path, comic: dict) -> None:
     if not raw.startswith(_PNG_SIGNATURE):
         return
 
-    chunks = []
-    chunks.append(_make_png_text_chunk("Title", comic.get("title", "")))
-    chunks.append(_make_png_text_chunk("Description", comic.get("alt", "")))
-    chunks.append(_make_png_text_chunk("Source", f"https://xkcd.com/{comic['num']}/"))
-    chunks.append(_make_png_text_chunk("Creation Time", _comic_date(comic)))
-    if comic.get("transcript"):
-        chunks.append(_make_png_text_chunk("Comment", comic["transcript"]))
-
-    text_data = b"".join(chunks)
+    text_data = build_png_metadata_chunks(comic)
 
     # Insert tEXt chunks after the IHDR chunk (first chunk after 8-byte signature).
     # IHDR is always first: 4 bytes length + 4 bytes type + data + 4 bytes CRC
