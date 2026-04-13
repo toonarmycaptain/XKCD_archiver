@@ -4,6 +4,7 @@ from pathlib import Path
 
 import responses
 
+from XKCD_archiver.cache import ComicCache
 from XKCD_archiver.downloader import Downloader, DownloadProgress
 
 FAKE_IMAGE = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
@@ -238,3 +239,41 @@ class TestDownloadComics:
 
         assert len(progress_reports) == 2
         assert all(isinstance(p, DownloadProgress) for p in progress_reports)
+
+    @responses.activate
+    def test_populates_cache(self, tmp_path):
+        _register_latest(2)
+        for i in range(1, 3):
+            responses.add(
+                responses.GET,
+                f"https://xkcd.com/{i}/info.0.json",
+                json={"num": i, "img": f"https://imgs.xkcd.com/comics/comic{i}.png", "title": f"Comic {i}"},
+            )
+            responses.add(responses.GET, f"https://imgs.xkcd.com/comics/comic{i}.png", body=FAKE_IMAGE)
+
+        d = Downloader(output_dir=tmp_path)
+        d.download_comics(mode="full")
+
+        cache = ComicCache(tmp_path)
+        assert cache.count() == 2
+        comic1 = cache.get(1)
+        assert comic1 is not None
+        assert comic1["title"] == "Comic 1"
+        assert comic1["filename"] == "1-comic1.png"
+
+    @responses.activate
+    def test_cache_not_populated_for_skipped(self, tmp_path):
+        (tmp_path / "1-comic1.png").write_bytes(FAKE_IMAGE)
+        _register_latest(1)
+        responses.add(
+            responses.GET,
+            "https://xkcd.com/1/info.0.json",
+            json={"num": 1, "img": "https://imgs.xkcd.com/comics/comic1.png", "title": "Comic 1"},
+        )
+        responses.add(responses.GET, "https://imgs.xkcd.com/comics/comic1.png", body=FAKE_IMAGE)
+
+        d = Downloader(output_dir=tmp_path)
+        d.download_comics(mode="full")
+
+        cache = ComicCache(tmp_path)
+        assert cache.count() == 0
