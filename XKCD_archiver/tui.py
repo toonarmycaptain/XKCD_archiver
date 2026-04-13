@@ -1,5 +1,7 @@
 """Textual TUI for XKCD archiver."""
 
+import time
+
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -51,6 +53,8 @@ class XKCDArchiverApp(App):
         self._skipped = 0
         self._failed = 0
         self._total = 0
+        self._downloader: Downloader | None = None
+        self._running = False
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -73,7 +77,10 @@ class XKCDArchiverApp(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "start-btn":
-            self._start_download()
+            if self._running:
+                self._cancel_download()
+            else:
+                self._start_download()
 
     def _start_download(self) -> None:
         mode_select = self.query_one("#mode-select", Select)
@@ -87,8 +94,9 @@ class XKCDArchiverApp(App):
         except ValueError:
             workers = 10
 
-        start_btn.disabled = True
-        start_btn.label = "Running..."
+        self._running = True
+        start_btn.label = "Cancel"
+        start_btn.variant = "error"
 
         self._downloaded = 0
         self._skipped = 0
@@ -101,31 +109,34 @@ class XKCDArchiverApp(App):
 
         self._run_download(mode, workers)
 
+    def _cancel_download(self) -> None:
+        if self._downloader:
+            self._downloader.cancel()
+        log = self.query_one("#log", RichLog)
+        log.write("[yellow]Cancelling...[/]")
+
     @work(thread=True)
     def _run_download(self, mode: str, workers: int) -> None:
         def on_progress(p: DownloadProgress) -> None:
             self.call_from_thread(self._update_progress, p)
 
-        downloader = Downloader(
+        self._downloader = Downloader(
             max_workers=workers,
             progress_callback=on_progress,
         )
 
-        # Get total first for progress bar
         import requests
 
         session = requests.Session()
-        latest = downloader._get_latest_comic(session)
+        latest = self._downloader._get_latest_comic(session)
         session.close()
 
         total = min(100, latest) if mode == "quick" else latest
 
         self.call_from_thread(self._set_total, total)
 
-        import time
-
         start = time.time()
-        downloader.download_comics(mode=mode)
+        self._downloader.download_comics(mode=mode)
         elapsed = time.time() - start
 
         self.call_from_thread(self._download_complete, elapsed)
@@ -168,14 +179,19 @@ class XKCDArchiverApp(App):
             runtime = f"{mins:.0f}m {sec:.1f}s"
         else:
             runtime = f"{elapsed:.1f}s"
+
+        was_cancelled = self._downloader and self._downloader._cancel_event.is_set()
+        status = "[yellow]Cancelled[/]" if was_cancelled else "[bold]Done![/]"
+
         log.write(
-            f"[bold]Done![/] Downloaded: {self._downloaded}, Skipped: {self._skipped}, "
-            f"Failed: {self._failed} in {runtime}"
+            f"{status} Downloaded: {self._downloaded}, Skipped: {self._skipped}, Failed: {self._failed} in {runtime}"
         )
 
+        self._running = False
+        self._downloader = None
         start_btn = self.query_one("#start-btn", Button)
-        start_btn.disabled = False
         start_btn.label = "Start"
+        start_btn.variant = "primary"
 
 
 def main() -> None:
