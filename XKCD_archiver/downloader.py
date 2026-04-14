@@ -9,7 +9,8 @@ from time import sleep
 import requests
 from requests.adapters import HTTPAdapter
 
-from XKCD_archiver.metadata import embed_metadata
+from XKCD_archiver.cache import ComicCache
+from XKCD_archiver.metadata import build_png_metadata_chunks, embed_metadata
 
 
 @dataclass
@@ -57,6 +58,7 @@ class Downloader:
         self.progress_callback = progress_callback
         self._thread_local = threading.local()
         self._cancel_event = threading.Event()
+        self._cache = ComicCache(output_dir)
 
     def cancel(self) -> None:
         """Signal all workers to stop."""
@@ -88,15 +90,29 @@ class Downloader:
     def _set_comic_filename(self, comic: dict) -> Path:
         return Path(f"{comic['num']}-{Path(comic['img']).name}")
 
-    def _download_image(self, session: requests.Session, comic_url: str, filepath: Path) -> bool:
-        """Download image. Returns True if saved, False if image unavailable."""
+    def _download_image(
+        self, session: requests.Session, comic_url: str, filepath: Path, png_metadata: bytes = b""
+    ) -> bool:
+        """Download image. Returns True if saved, False if image unavailable.
+
+        For PNGs, png_metadata bytes are injected after the IHDR chunk during
+        the initial write, avoiding a second read/write pass.
+        """
         response = session.get(comic_url, timeout=self.TIMEOUT)
         if response.status_code != 200:
             return False
 
+        content = response.content
+        if png_metadata and filepath.suffix.lower() == ".png" and content[:8] == b"\x89PNG\r\n\x1a\n":
+            # Inject tEXt chunks after IHDR
+            import struct
+
+            ihdr_length = struct.unpack(">I", content[8:12])[0]
+            insert_pos = 8 + 4 + 4 + ihdr_length + 4
+            content = content[:insert_pos] + png_metadata + content[insert_pos:]
+
         with open(filepath, "xb") as image_file:
-            for chunk in response.iter_content(100_000):
-                image_file.write(chunk)
+            image_file.write(content)
         return True
 
     def _download_one(self, comic_number: int, total: int) -> DownloadProgress:
@@ -123,8 +139,11 @@ class Downloader:
                 if filepath.exists():
                     return DownloadProgress(comic_number, total, "skipped")
 
-                if self._download_image(session, comic["img"], filepath):
-                    embed_metadata(filepath, comic)
+                png_meta = build_png_metadata_chunks(comic) if filepath.suffix.lower() == ".png" else b""
+                if self._download_image(session, comic["img"], filepath, png_metadata=png_meta):
+                    if not png_meta:
+                        embed_metadata(filepath, comic)  # JPEG/GIF only
+                    self._cache.store(comic, filename.name)
                     return DownloadProgress(comic_number, total, "downloaded")
                 return DownloadProgress(comic_number, total, "skipped", "image unavailable")
 

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-04-13
+### Added
+- Comic viewer tab in TUI with scrollable list, inline image preview, and metadata display
+- SQLite metadata cache (`.xkcd_cache.db`) populated during downloads for fast browsing
+- Search across comic titles, alt text, and transcripts
+- Type-to-search: type while comic list is focused to filter
+- Press `o` to open comic in system image viewer
+- Progress polling from cache (decoupled from download threads)
+
+### Changed
+- Optimized PNG metadata embedding to single-pass raw byte injection (no Pillow re-encode)
+- TUI lazy-loads image widget only when viewer tab is opened
+
 ## [3.1.0] - 2026-04-12
 ### Added
 - Embed alt text, title, source URL, and date into downloaded images (PNG tEXt, JPEG EXIF, GIF comment)
