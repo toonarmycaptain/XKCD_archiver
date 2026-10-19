@@ -39,6 +39,15 @@ The TUI has two tabs:
 - SQLite metadata cache for fast browsing
 - Press `o` in viewer to open comic in system image viewer
 
+## Free-threaded Python
+
+All dependencies support free-threaded (no-GIL) Python 3.14+:
+
+```bash
+uv sync --python 3.15t    # recreate .venv with the free-threaded build
+uv run xkcd-archiver
+```
+
 ## Run modes
 
 - **Full mode**: Checks every comic, downloads any missing.
